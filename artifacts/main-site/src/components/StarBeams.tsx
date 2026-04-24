@@ -1,38 +1,51 @@
 import { useEffect, useRef } from "react";
 import { getLightSourcePosition } from "@/lib/lightSource";
 
-// Same 4-point star silhouette as GlowingStar (200x200 viewBox)
 const STAR_PATH_STR =
   "M 100 0 C 100 60, 140 100, 200 100 C 140 100, 100 140, 100 200 C 100 140, 60 100, 0 100 C 60 100, 100 60, 100 0 Z";
 
 interface StarBeamsProps {
-  /** Visible star size in pixels — silhouette scales to match */
   starSize?: number;
-  /** Radius of the bright back-glow (px) */
   glowReach?: number;
-  /** How many silhouette stamps build up the soft shadow rays */
   shadowLayers?: number;
-  /** Maximum scale multiplier the silhouette stretches to (away from light) */
   shadowReach?: number;
-  /** 0..1 — overall brightness of the bright back-glow */
   brightness?: number;
+  /** Number of bright god-ray streaks fanning out from the source */
+  rayCount?: number;
+  /** Multiplier for the bright god-rays' intensity */
+  rayIntensity?: number;
   className?: string;
 }
 
+interface Beam {
+  baseAngle: number;
+  jitter: number;
+  width: number;
+  lengthMul: number;
+  intensityPhase: number;
+  intensitySpeed: number;
+  intensityBase: number;
+  hue: number;
+}
+
 /**
- * Volumetric back-light for the star: renders a bright radial halo BEHIND
- * the star (the "light source") and casts soft shadow rays outward by
- * stamping the star silhouette many times, each stamp scaled outward from
- * the light source position. As the light source drifts, the silhouette
- * stamps re-aim — the shadows sweep across the scene in real time, like
- * the star is a real 3D object occluding a moving lamp behind it.
+ * Cinematic back-light for the star:
+ *   1. Wide bright cyan halo behind the scene (the "lamp")
+ *   2. Long bright god-ray streaks emanating from the moving light source
+ *   3. Star silhouette punches out a dark hole + dark trails (shadow rays)
+ *      revealing the deep navy background — soft, smooth, never sharp.
+ *
+ * The light source position is shared with `GlowingStar` via
+ * `getLightSourcePosition(t)`, so all light/shadow direction stays in sync.
  */
 export default function StarBeams({
   starSize = 680,
-  glowReach = 580,
-  shadowLayers = 55,
-  shadowReach = 10,
-  brightness = 0.7,
+  glowReach = 720,
+  shadowLayers = 50,
+  shadowReach = 9,
+  brightness = 0.95,
+  rayCount = 44,
+  rayIntensity = 0.85,
   className = "",
 }: StarBeamsProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -40,6 +53,7 @@ export default function StarBeams({
   const startRef = useRef(performance.now());
   const sizeRef = useRef({ w: 0, h: 0 });
   const pathRef = useRef<Path2D | null>(null);
+  const beamsRef = useRef<Beam[]>([]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -48,6 +62,23 @@ export default function StarBeams({
     if (!ctx) return;
 
     pathRef.current = new Path2D(STAR_PATH_STR);
+
+    // Initialize the bright god-ray beams with varied params
+    const palette = [188, 195, 200, 205, 210, 215, 220];
+    const beams: Beam[] = [];
+    for (let i = 0; i < rayCount; i++) {
+      beams.push({
+        baseAngle: (i / rayCount) * Math.PI * 2,
+        jitter: (Math.random() - 0.5) * 0.18,
+        width: 8 + Math.random() * 60,
+        lengthMul: 0.55 + Math.random() * 0.55,
+        intensityPhase: Math.random() * Math.PI * 2,
+        intensitySpeed: 0.35 + Math.random() * 0.85,
+        intensityBase: 0.4 + Math.random() * 0.7,
+        hue: palette[i % palette.length] + (Math.random() - 0.5) * 12,
+      });
+    }
+    beamsRef.current = beams;
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let visible = true;
@@ -59,8 +90,6 @@ export default function StarBeams({
       canvas.width = rect.width * dpr;
       canvas.height = rect.height * dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      // If RAF isn't running (reduced motion or paused), redraw a single frame
-      // so the canvas isn't stale/blank after viewport resize.
       if (rafRef.current === null) draw();
     };
 
@@ -68,48 +97,97 @@ export default function StarBeams({
       const { w, h } = sizeRef.current;
       const t = (performance.now() - startRef.current) / 1000;
       const path = pathRef.current!;
+      const beamsArr = beamsRef.current;
 
-      // Star is centered in the canvas
       const cx = w / 2;
       const cy = h / 2;
 
-      // Light source drifts in a slow lissajous BEHIND the star.
-      // Drift is intentionally small so rays mostly fan out in all
-      // directions and only subtly bias toward one side as the source moves.
+      // Light source drifts in a slow lissajous BEHIND the star
       const ls = getLightSourcePosition(t);
-      const driftStrength = starSize * 0.12;
+      const driftStrength = starSize * 0.16;
       const lx = cx + ls.x * driftStrength;
       const ly = cy + ls.y * driftStrength;
 
+      // Slow global rotation so god-rays subtly sweep over time
+      const globalRot = t * 0.022;
+
+      const maxLen = Math.sqrt(w * w + h * h) * 0.85;
+
       ctx.clearRect(0, 0, w, h);
 
-      // ===== 1. Bright radial back-glow (the light source itself) =====
+      // ========= 1. Wide bright back-glow (the "lamp" behind everything) =========
       const bgGrad = ctx.createRadialGradient(lx, ly, 0, lx, ly, glowReach);
-      bgGrad.addColorStop(0, `hsla(195, 100%, 78%, ${0.95 * brightness})`);
-      bgGrad.addColorStop(0.06, `hsla(198, 100%, 68%, ${0.85 * brightness})`);
-      bgGrad.addColorStop(0.18, `hsla(205, 100%, 55%, ${0.6 * brightness})`);
-      bgGrad.addColorStop(0.4, `hsla(215, 95%, 38%, ${0.28 * brightness})`);
-      bgGrad.addColorStop(0.7, `hsla(225, 85%, 22%, ${0.08 * brightness})`);
+      bgGrad.addColorStop(0, `hsla(193, 100%, 88%, ${0.95 * brightness})`);
+      bgGrad.addColorStop(0.06, `hsla(196, 100%, 75%, ${0.9 * brightness})`);
+      bgGrad.addColorStop(0.18, `hsla(202, 100%, 60%, ${0.7 * brightness})`);
+      bgGrad.addColorStop(0.36, `hsla(212, 100%, 45%, ${0.45 * brightness})`);
+      bgGrad.addColorStop(0.6, `hsla(220, 95%, 30%, ${0.18 * brightness})`);
+      bgGrad.addColorStop(0.85, `hsla(225, 85%, 18%, ${0.05 * brightness})`);
       bgGrad.addColorStop(1, "hsla(225, 80%, 12%, 0)");
       ctx.fillStyle = bgGrad;
       ctx.fillRect(0, 0, w, h);
 
-      // ===== 2. Soft shadow rays — punch out the bright bg with =====
-      // ===== silhouette stamps zoomed outward from the light source =====
-      ctx.globalCompositeOperation = "destination-out";
+      // ========= 2. Bright god-ray streaks emanating from the source =========
+      ctx.globalCompositeOperation = "lighter";
+      for (const beam of beamsArr) {
+        const angle = beam.baseAngle + globalRot + beam.jitter;
+        const length = maxLen * beam.lengthMul;
+        const flicker =
+          0.55 + 0.45 * Math.sin(t * beam.intensitySpeed + beam.intensityPhase);
+        const alpha = beam.intensityBase * flicker * rayIntensity;
 
-      const baseScale = starSize / 200; // 200x200 viewBox -> starSize px
+        ctx.save();
+        ctx.translate(lx, ly);
+        ctx.rotate(angle);
+
+        const grad = ctx.createLinearGradient(0, 0, length, 0);
+        grad.addColorStop(0, `hsla(${beam.hue}, 100%, 92%, ${alpha * 0.95})`);
+        grad.addColorStop(0.04, `hsla(${beam.hue}, 100%, 80%, ${alpha * 0.78})`);
+        grad.addColorStop(0.18, `hsla(${beam.hue}, 100%, 62%, ${alpha * 0.4})`);
+        grad.addColorStop(0.45, `hsla(${beam.hue}, 95%, 45%, ${alpha * 0.16})`);
+        grad.addColorStop(0.75, `hsla(${beam.hue}, 90%, 30%, ${alpha * 0.04})`);
+        grad.addColorStop(1, `hsla(${beam.hue}, 85%, 20%, 0)`);
+
+        ctx.fillStyle = grad;
+
+        // Trapezoid: narrow at source, flares out (god-ray look)
+        const nearW = 0.6;
+        const farW = beam.width;
+        ctx.beginPath();
+        ctx.moveTo(0, -nearW);
+        ctx.lineTo(0, nearW);
+        ctx.lineTo(length, farW);
+        ctx.lineTo(length, -farW);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.restore();
+      }
+
+      // ========= 3. A small bright "lamp bulb" at the source itself =========
+      const bulbR = 90 + Math.sin(t * 1.2) * 18;
+      const bulb = ctx.createRadialGradient(lx, ly, 0, lx, ly, bulbR);
+      bulb.addColorStop(0, `hsla(190, 100%, 95%, ${0.7 * brightness})`);
+      bulb.addColorStop(0.4, `hsla(200, 100%, 70%, ${0.35 * brightness})`);
+      bulb.addColorStop(1, "hsla(210, 95%, 50%, 0)");
+      ctx.fillStyle = bulb;
+      ctx.beginPath();
+      ctx.arc(lx, ly, bulbR, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.globalCompositeOperation = "source-over";
+
+      // ========= 4. Star silhouette occlusion — punches out dark shadow trails =========
+      ctx.globalCompositeOperation = "destination-out";
+      const baseScale = starSize / 200;
 
       for (let i = 0; i < shadowLayers; i++) {
         const u = i / (shadowLayers - 1 || 1);
-        // Easing — most stamps near the source, sparser toward the edge
         const eased = u * u;
         const expand = 1 + eased * (shadowReach - 1);
-        // Alpha drops with distance — softens the ray edges
         const alpha = (1 - u) * 0.085;
 
         ctx.save();
-        // Scale around the light source position, then draw star centered at (cx, cy)
         ctx.translate(lx, ly);
         ctx.scale(expand, expand);
         ctx.translate(-lx, -ly);
@@ -122,21 +200,17 @@ export default function StarBeams({
         ctx.restore();
       }
 
-      // ===== 3. A second, much softer pass with a wider blur for atmospheric =====
-      // ===== haze around the shadow rays =====
-      ctx.globalCompositeOperation = "destination-out";
+      // ========= 5. Atmospheric soft outer haze (extra blurred shadow) =========
       ctx.save();
-      // Use a slight blur via filter for the outermost soft halo
-      // (filter is supported in all modern browsers; gracefully ignored otherwise)
       try {
-        ctx.filter = "blur(6px)";
+        ctx.filter = "blur(8px)";
       } catch {
         /* ignore */
       }
       for (let i = 0; i < 8; i++) {
         const u = i / 7;
-        const expand = 1.2 + u * (shadowReach * 1.4);
-        const alpha = (1 - u) * 0.04;
+        const expand = 1.4 + u * (shadowReach * 1.5);
+        const alpha = (1 - u) * 0.045;
         ctx.save();
         ctx.translate(lx, ly);
         ctx.scale(expand, expand);
@@ -160,8 +234,9 @@ export default function StarBeams({
       }
     };
 
+    // resize() already kicks off the first draw when no RAF is scheduled,
+    // so we must not call draw() again here — that would start a second loop.
     resize();
-    draw();
 
     const io = new IntersectionObserver(
       (entries) => {
@@ -181,7 +256,7 @@ export default function StarBeams({
       io.disconnect();
       window.removeEventListener("resize", resize);
     };
-  }, [starSize, glowReach, shadowLayers, shadowReach, brightness]);
+  }, [starSize, glowReach, shadowLayers, shadowReach, brightness, rayCount, rayIntensity]);
 
   return (
     <canvas

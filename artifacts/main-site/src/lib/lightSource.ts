@@ -6,10 +6,11 @@
  * the opposite side.
  *
  * Returns normalized offset from center in roughly the range -0.85..0.85.
+ * Cycle is roughly 10–14 seconds for premium, calm motion.
  * `t` is seconds.
  */
 export function getLightSourcePosition(t: number): { x: number; y: number } {
-  const x = Math.sin(t * 0.22) * 0.55 + Math.cos(t * 0.13) * 0.28;
-  const y = Math.cos(t * 0.18) * 0.42 + Math.sin(t * 0.11) * 0.28;
+  const x = Math.sin(t * 0.55) * 0.55 + Math.cos(t * 0.34) * 0.28;
+  const y = Math.cos(t * 0.46) * 0.42 + Math.sin(t * 0.29) * 0.28;
   return { x, y };
 }
