@@ -2,11 +2,11 @@ import { useEffect, useRef } from "react";
 import { getLightSourcePosition } from "@/lib/lightSource";
 
 interface StarBeamsProps {
-  /** Outer reach of the soft glow in CSS pixels */
+  /** Outer reach of the soft drifting ambient glow in CSS pixels */
   glowReach?: number;
   /** Overall brightness multiplier (0..1) */
   brightness?: number;
-  /** Horizontal stretch of the glow (1 = circular, >1 = wider) */
+  /** Horizontal stretch of the ambient glow (1 = circular, >1 = wider) */
   spread?: number;
   /** Vertical bias of the glow center relative to canvas center (negative = up) */
   yBias?: number;
@@ -14,6 +14,14 @@ interface StarBeamsProps {
   lampRadius?: number;
   /** Brightness of the fixed lamp (0..1+) */
   lampIntensity?: number;
+  /**
+   * Length of the four diagonal glow streaks that bleed out between the
+   * star's points (45°, 135°, 225°, 315°). They emulate light wrapping
+   * around the star silhouette rather than rays from its center.
+   */
+  streakReach?: number;
+  /** Strength of the directional streaks (0 = none, 1 = strong) */
+  streakStrength?: number;
   className?: string;
 }
 
@@ -33,6 +41,8 @@ export default function StarBeams({
   yBias = 0,
   lampRadius = 380,
   lampIntensity = 1,
+  streakReach = 720,
+  streakStrength = 1,
   className = "",
 }: StarBeamsProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -78,40 +88,72 @@ export default function StarBeams({
 
       ctx.clearRect(0, 0, w, h);
 
-      // ===== Layer 1: huge atmospheric haze (very wide, very faint) =====
-      // Drifts with the ambient light source — gives the soft falloff
+      // ===== Layer 1: very faint atmospheric haze =====
+      // Gives the scene a slight cyan ambient tint without competing with
+      // the star or text. Drifts with the ambient light source.
       const haze = ctx.createRadialGradient(lx, ly, 0, lx, ly, reach * 1.3);
-      haze.addColorStop(0, `hsla(205, 100%, 50%, ${0.18 * brightness})`);
-      haze.addColorStop(0.4, `hsla(215, 95%, 35%, ${0.1 * brightness})`);
-      haze.addColorStop(0.75, `hsla(222, 90%, 22%, ${0.035 * brightness})`);
+      haze.addColorStop(0, `hsla(205, 100%, 50%, ${0.08 * brightness})`);
+      haze.addColorStop(0.45, `hsla(215, 95%, 35%, ${0.04 * brightness})`);
+      haze.addColorStop(0.8, `hsla(222, 90%, 22%, ${0.012 * brightness})`);
       haze.addColorStop(1, "hsla(225, 80%, 12%, 0)");
       ctx.fillStyle = haze;
       ctx.fillRect(0, 0, w, h);
 
-      // ===== Layer 2: main soft cyan glow (the "softbox") =====
-      // Drifts with the ambient light source, slightly stretched horizontally
+      // ===== Layer 2: subtle drifting softbox (ambient back-light) =====
+      // Slightly stretched horizontally — adds the "play with light" feel
+      // without dominating. Much subtler than the fixed lamp.
       ctx.save();
       ctx.translate(lx, ly);
       ctx.scale(spread, 1);
       ctx.translate(-lx, -ly);
 
       const main = ctx.createRadialGradient(lx, ly, 0, lx, ly, reach);
-      main.addColorStop(0, `hsla(195, 95%, 70%, ${0.55 * brightness})`);
-      main.addColorStop(0.1, `hsla(198, 95%, 62%, ${0.45 * brightness})`);
-      main.addColorStop(0.25, `hsla(204, 100%, 52%, ${0.32 * brightness})`);
-      main.addColorStop(0.45, `hsla(212, 95%, 42%, ${0.18 * brightness})`);
-      main.addColorStop(0.7, `hsla(220, 90%, 28%, ${0.06 * brightness})`);
-      main.addColorStop(0.92, `hsla(225, 85%, 18%, ${0.02 * brightness})`);
+      main.addColorStop(0, `hsla(195, 95%, 70%, ${0.22 * brightness})`);
+      main.addColorStop(0.15, `hsla(198, 95%, 62%, ${0.16 * brightness})`);
+      main.addColorStop(0.35, `hsla(204, 100%, 52%, ${0.1 * brightness})`);
+      main.addColorStop(0.6, `hsla(212, 95%, 42%, ${0.05 * brightness})`);
+      main.addColorStop(0.85, `hsla(220, 90%, 28%, ${0.02 * brightness})`);
       main.addColorStop(1, "hsla(225, 80%, 12%, 0)");
       ctx.fillStyle = main;
       ctx.fillRect(lx - reach * 2, ly - reach * 2, reach * 4, reach * 4);
       ctx.restore();
 
-      // ===== Layer 3: FIXED bright "lamp" centered behind the star =====
-      // This is the actual light source the star sits in front of. It doesn't
-      // drift — anchored at (cx, cy) so the bright zone is always behind the
-      // star, and the bright wraparound at the star's edges stays symmetric.
-      // The lamp pulses gently in time with the breathing.
+      // ===== Layer 3: 4 diagonal glow streaks between the star's points =====
+      // The star has 4 points along the cardinal axes (N/E/S/W); the gaps
+      // between them sit on the diagonals (NE/SE/SW/NW). Light "leaks" out
+      // through these gaps, forming 4 elongated cyan streaks. Each streak's
+      // opacity is modulated by where the drifting source is — when the
+      // source moves toward NE, the NE streak brightens; the opposite (SW)
+      // dims, giving the "play with light" rotation feel.
+      const streakAngles = [45, 135, 225, 315];
+      const streakOff = lampRadius * 0.55;
+      for (const deg of streakAngles) {
+        const a = (deg * Math.PI) / 180;
+        const dx = Math.cos(a);
+        const dy = Math.sin(a);
+        // Dot product with light direction → -1..1 → modulation 0.45..1.0
+        const dot = ls.x * dx + ls.y * dy;
+        const mod = 0.45 + (dot * 0.5 + 0.5) * 0.55;
+
+        ctx.save();
+        ctx.translate(cx + dx * streakOff, cy + dy * streakOff);
+        ctx.rotate(a);
+        ctx.scale(2.2, 0.65); // elongated along its diagonal axis
+
+        const sg = ctx.createRadialGradient(0, 0, 0, 0, 0, streakReach);
+        sg.addColorStop(0, `hsla(192, 100%, 78%, ${0.55 * mod * streakStrength * brightness})`);
+        sg.addColorStop(0.18, `hsla(196, 100%, 66%, ${0.38 * mod * streakStrength * brightness})`);
+        sg.addColorStop(0.45, `hsla(204, 100%, 52%, ${0.18 * mod * streakStrength * brightness})`);
+        sg.addColorStop(0.75, `hsla(214, 95%, 38%, ${0.06 * mod * streakStrength * brightness})`);
+        sg.addColorStop(1, "hsla(222, 88%, 22%, 0)");
+        ctx.fillStyle = sg;
+        ctx.fillRect(-streakReach * 1.5, -streakReach * 1.5, streakReach * 3, streakReach * 3);
+        ctx.restore();
+      }
+
+      // ===== Layer 4: FIXED bright "lamp" centered behind the star =====
+      // The actual light source — fixed (no drift), so the bright wraparound
+      // at the star's edges stays symmetric. Pulses gently in time.
       const lampPulse = 1 + Math.sin(t * 0.6) * 0.08;
       const lr = lampRadius * lampPulse;
       const lamp = ctx.createRadialGradient(cx, cy, 0, cx, cy, lr);
@@ -124,9 +166,7 @@ export default function StarBeams({
       ctx.fillStyle = lamp;
       ctx.fillRect(cx - lr, cy - lr, lr * 2, lr * 2);
 
-      // ===== Layer 4: tiny intense hot core right at lamp center =====
-      // Punches through to give the "small bright spot visible behind/through
-      // the star" reference look.
+      // ===== Layer 5: tiny intense hot core right at lamp center =====
       const hot = ctx.createRadialGradient(cx, cy, 0, cx, cy, lampRadius * 0.18);
       hot.addColorStop(0, `hsla(185, 100%, 98%, ${0.95 * lampIntensity * brightness})`);
       hot.addColorStop(0.4, `hsla(192, 100%, 85%, ${0.55 * lampIntensity * brightness})`);

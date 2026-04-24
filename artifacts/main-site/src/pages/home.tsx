@@ -68,23 +68,26 @@ export default function Home() {
 
       {/* HERO SECTION */}
       <section className="relative min-h-screen w-full flex flex-col items-center overflow-hidden pt-32 md:pt-40">
-        {/* Sparkles drifting in the background */}
+        {/* Sparkles drifting in the background — sparse, premium feel */}
         <div className="absolute inset-0 z-0">
-          <SparkleField count={140} />
+          <SparkleField count={60} />
         </div>
 
-        {/* Wide cinematic cyan back-light — softbox style, no discrete rays */}
+        {/* Cinematic cyan back-light: lamp behind the star + 4 diagonal
+            streaks bleeding through the gaps between the star's points */}
         <motion.div
           className="absolute inset-0 z-0 pointer-events-none"
           style={{ opacity: heroFade }}
         >
           <StarBeams
-            glowReach={1400}
-            brightness={1}
-            spread={1.4}
-            yBias={250}
-            lampRadius={420}
+            glowReach={1100}
+            brightness={0.95}
+            spread={1.3}
+            yBias={280}
+            lampRadius={380}
             lampIntensity={1}
+            streakReach={780}
+            streakStrength={1}
           />
         </motion.div>
 
