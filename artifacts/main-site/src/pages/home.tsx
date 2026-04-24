@@ -9,6 +9,7 @@ import WarpStreaks from "@/components/WarpStreaks";
 import HorizonGlow from "@/components/HorizonGlow";
 import CursorGlow from "@/components/CursorGlow";
 import SparkleField from "@/components/SparkleField";
+import StarBeams from "@/components/StarBeams";
 
 export default function Home() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -72,9 +73,19 @@ export default function Home() {
           <SparkleField count={70} />
         </div>
 
+        {/* Light beams from a moving source behind the star */}
+        <motion.div
+          className="absolute inset-x-0 top-[42%] flex items-start justify-center z-0 pointer-events-none"
+          style={{ opacity: heroFade }}
+        >
+          <div className="relative" style={{ width: 1400, height: 900, maxWidth: "140vw" }}>
+            <StarBeams count={32} reach={0.7} intensity={0.95} />
+          </div>
+        </motion.div>
+
         {/* Star anchored lower, behind the text */}
         <motion.div
-          className="absolute inset-x-0 top-[42%] flex items-start justify-center z-0"
+          className="absolute inset-x-0 top-[42%] flex items-start justify-center z-[1]"
           style={{ opacity: heroFade, scale: heroScale }}
         >
           <GlowingStar size={680} />
