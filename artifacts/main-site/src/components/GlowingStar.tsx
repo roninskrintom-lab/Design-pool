@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef } from "react";
 import { getLightSourcePosition } from "@/lib/lightSource";
+import { STAR_PATH } from "@/lib/starPath";
 
 interface GlowingStarProps {
   size?: number;
@@ -13,9 +14,6 @@ interface GlowingStarProps {
    */
   withBackdrop?: boolean;
 }
-
-const STAR_PATH =
-  "M 100 0 C 100 60, 140 100, 200 100 C 140 100, 100 140, 100 200 C 100 140, 60 100, 0 100 C 60 100, 100 60, 100 0 Z";
 
 /**
  * Dark navy 4-point star — a backlit silhouette in front of the bright cyan
@@ -31,16 +29,19 @@ export default function GlowingStar({
 }: GlowingStarProps) {
   const startRef = useRef(performance.now());
   const rimGradRef = useRef<SVGLinearGradientElement>(null);
-  const innerGradRef = useRef<SVGLinearGradientElement>(null);
-  const coreGlowRef = useRef<SVGRadialGradientElement>(null);
+  const facetGradRef = useRef<SVGLinearGradientElement>(null);
+  const shadowGradRef = useRef<SVGLinearGradientElement>(null);
 
   // Per-instance unique IDs for SVG paint servers — prevents cross-instance
   // gradient/filter binding collisions when multiple stars are on the page.
   const uid = useId().replace(/[:]/g, "");
-  const baseId = `starBase-${uid}`;
-  const innerId = `starInner-${uid}`;
+  const shellId = `starShell-${uid}`;
+  const midId = `starMid-${uid}`;
+  const deepId = `starDeep-${uid}`;
+  const coreId = `starCoreFill-${uid}`;
+  const facetId = `starFacet-${uid}`;
+  const shadowId = `starShadow-${uid}`;
   const rimId = `starRim-${uid}`;
-  const coreId = `starCore-${uid}`;
   const blurId = `rimBlur-${uid}`;
 
   useEffect(() => {
@@ -77,19 +78,23 @@ export default function GlowingStar({
         rimGradRef.current.setAttribute("x2", x2);
         rimGradRef.current.setAttribute("y2", y2);
       }
-      if (innerGradRef.current) {
-        innerGradRef.current.setAttribute("x1", x1);
-        innerGradRef.current.setAttribute("y1", y1);
-        innerGradRef.current.setAttribute("x2", x2);
-        innerGradRef.current.setAttribute("y2", y2);
+      if (facetGradRef.current) {
+        facetGradRef.current.setAttribute("x1", x1);
+        facetGradRef.current.setAttribute("y1", y1);
+        facetGradRef.current.setAttribute("x2", x2);
+        facetGradRef.current.setAttribute("y2", y2);
       }
-
-      // Tiny bright "core" highlight follows the light direction subtly
-      if (coreGlowRef.current) {
-        const cx = (50 + dirX * 12).toFixed(1) + "%";
-        const cy = (50 + dirY * 12).toFixed(1) + "%";
-        coreGlowRef.current.setAttribute("cx", cx);
-        coreGlowRef.current.setAttribute("cy", cy);
+      // Inner shadow gradient — opposite direction to facet (deepest shadow
+      // sits on the side facing AWAY from the light, like a real solid object)
+      if (shadowGradRef.current) {
+        const sx1 = (50 + dirX * 60).toFixed(1) + "%";
+        const sy1 = (50 + dirY * 60).toFixed(1) + "%";
+        const sx2 = (50 - dirX * 60).toFixed(1) + "%";
+        const sy2 = (50 - dirY * 60).toFixed(1) + "%";
+        shadowGradRef.current.setAttribute("x1", sx1);
+        shadowGradRef.current.setAttribute("y1", sy1);
+        shadowGradRef.current.setAttribute("x2", sx2);
+        shadowGradRef.current.setAttribute("y2", sy2);
       }
 
       if (!reducedMotion) {
@@ -140,35 +145,68 @@ export default function GlowingStar({
 
       <svg viewBox="0 0 200 200" className="relative w-full h-full overflow-visible">
         <defs>
-          {/* Outer star — slightly lighter blue (the "rim" / outline) */}
-          <linearGradient id={baseId} x1="50%" y1="0%" x2="50%" y2="100%">
-            <stop offset="0%" stopColor="hsl(212 75% 38%)" />
-            <stop offset="55%" stopColor="hsl(215 78% 30%)" />
-            <stop offset="100%" stopColor="hsl(220 82% 22%)" />
+          {/* Shell — lightest blue, the outer "rim" of the silhouette where
+              the back-light wraps over the edge */}
+          <linearGradient id={shellId} x1="50%" y1="0%" x2="50%" y2="100%">
+            <stop offset="0%" stopColor="hsl(210 72% 42%)" />
+            <stop offset="55%" stopColor="hsl(214 76% 33%)" />
+            <stop offset="100%" stopColor="hsl(218 80% 25%)" />
           </linearGradient>
 
-          {/* Inner concentric star — darker, gives the "double outline" depth */}
-          <linearGradient id={`${baseId}-inner`} x1="50%" y1="0%" x2="50%" y2="100%">
-            <stop offset="0%" stopColor="hsl(220 85% 22%)" />
-            <stop offset="55%" stopColor="hsl(222 88% 16%)" />
-            <stop offset="100%" stopColor="hsl(225 90% 11%)" />
+          {/* Mid layer — medium navy, sits one step inset from the shell */}
+          <linearGradient id={midId} x1="50%" y1="0%" x2="50%" y2="100%">
+            <stop offset="0%" stopColor="hsl(216 80% 26%)" />
+            <stop offset="55%" stopColor="hsl(220 84% 19%)" />
+            <stop offset="100%" stopColor="hsl(223 88% 14%)" />
           </linearGradient>
 
-          {/* Subtle directional shading — adds barely-there facet lighting */}
+          {/* Deep layer — darker, gives the "two-step bevel" feel */}
+          <linearGradient id={deepId} x1="50%" y1="0%" x2="50%" y2="100%">
+            <stop offset="0%" stopColor="hsl(222 88% 14%)" />
+            <stop offset="55%" stopColor="hsl(225 92% 10%)" />
+            <stop offset="100%" stopColor="hsl(228 95% 7%)" />
+          </linearGradient>
+
+          {/* Core — deepest navy, the "well" at the center of the star */}
+          <radialGradient id={coreId} cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="hsl(228 96% 5%)" />
+            <stop offset="60%" stopColor="hsl(226 92% 8%)" />
+            <stop offset="100%" stopColor="hsl(224 88% 12%)" />
+          </radialGradient>
+
+          {/* Facet light — subtle directional brightening on the lit EDGE
+              only. Middle stop is fully transparent so the star's center
+              never gets brightened by this overlay (no central hotspot). */}
           <linearGradient
-            ref={innerGradRef}
-            id={innerId}
+            ref={facetGradRef}
+            id={facetId}
             x1="20%"
             y1="80%"
             x2="80%"
             y2="20%"
           >
-            <stop offset="0%" stopColor="hsl(225 90% 5%)" stopOpacity="0.3" />
-            <stop offset="50%" stopColor="hsl(220 80% 12%)" stopOpacity="0" />
-            <stop offset="100%" stopColor="hsl(200 95% 50%)" stopOpacity="0.1" />
+            <stop offset="0%" stopColor="hsla(220, 85%, 6%, 0)" />
+            <stop offset="65%" stopColor="hsla(210, 60%, 25%, 0)" />
+            <stop offset="100%" stopColor="hsla(200, 90%, 60%, 0.16)" />
           </linearGradient>
 
-          {/* Rim light — barely-there cyan edge glow tracking light direction */}
+          {/* Inner shadow — deepens the side facing AWAY from the light, like
+              a real solid object catching back-light from one direction */}
+          <linearGradient
+            ref={shadowGradRef}
+            id={shadowId}
+            x1="20%"
+            y1="80%"
+            x2="80%"
+            y2="20%"
+          >
+            <stop offset="0%" stopColor="hsla(228, 95%, 3%, 0.55)" />
+            <stop offset="55%" stopColor="hsla(224, 88%, 8%, 0.18)" />
+            <stop offset="100%" stopColor="hsla(220, 80%, 15%, 0)" />
+          </linearGradient>
+
+          {/* Rim light — soft cyan glow confined to the lit EDGE only.
+              Middle stop is transparent so it cannot bleed into the center. */}
           <linearGradient
             ref={rimGradRef}
             id={rimId}
@@ -178,59 +216,55 @@ export default function GlowingStar({
             y2="20%"
           >
             <stop offset="0%" stopColor="hsla(200, 100%, 90%, 0)" />
-            <stop offset="65%" stopColor="hsla(195, 100%, 88%, 0.06)" />
-            <stop offset="100%" stopColor="hsla(190, 100%, 92%, 0.18)" />
+            <stop offset="75%" stopColor="hsla(195, 100%, 88%, 0)" />
+            <stop offset="100%" stopColor="hsla(190, 100%, 92%, 0.22)" />
           </linearGradient>
 
-          {/* Subtle cyan core — represents the backlight bleeding through the
-              center of the star. Softer than before because the StarBeams lamp
-              now provides the main "light from behind" sensation. */}
-          <radialGradient
-            ref={coreGlowRef}
-            id={coreId}
-            cx="50%"
-            cy="50%"
-            r="28%"
-          >
-            <stop offset="0%" stopColor="hsla(192, 100%, 92%, 0.55)" />
-            <stop offset="30%" stopColor="hsla(196, 100%, 78%, 0.32)" />
-            <stop offset="65%" stopColor="hsla(202, 100%, 60%, 0.12)" />
-            <stop offset="100%" stopColor="hsla(208, 100%, 50%, 0)" />
-          </radialGradient>
-
-          {/* Soft outline blur */}
+          {/* Soft outline blur for the rim */}
           <filter id={blurId} x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="0.6" />
+            <feGaussianBlur stdDeviation="0.7" />
           </filter>
         </defs>
 
-        {/* Layer 1 — outer star (lighter blue rim/shell) */}
-        <path d={STAR_PATH} fill={`url(#${baseId})`} />
+        {/* ----- Multi-layer concentric body for 3D depth ----- */}
 
-        {/* Layer 2 — inner concentric star (darker, slightly inset) */}
-        <g transform="translate(100 100) scale(0.86) translate(-100 -100)">
-          <path d={STAR_PATH} fill={`url(#${baseId}-inner)`} />
+        {/* Layer 1 — Shell (full size) — lightest, the outer rim */}
+        <path d={STAR_PATH} fill={`url(#${shellId})`} />
+
+        {/* Layer 2 — Mid (scale 0.92) — first step inward */}
+        <g transform="translate(100 100) scale(0.92) translate(-100 -100)">
+          <path d={STAR_PATH} fill={`url(#${midId})`} />
         </g>
 
-        {/* Layer 3 — subtle directional facet shading on top */}
+        {/* Layer 3 — Deep (scale 0.78) — second step inward */}
+        <g transform="translate(100 100) scale(0.78) translate(-100 -100)">
+          <path d={STAR_PATH} fill={`url(#${deepId})`} />
+        </g>
+
+        {/* Layer 4 — Core (scale 0.55) — innermost dark well */}
+        <g transform="translate(100 100) scale(0.55) translate(-100 -100)">
+          <path d={STAR_PATH} fill={`url(#${coreId})`} />
+        </g>
+
+        {/* ----- Directional shading overlays ----- */}
+
+        {/* Layer 5 — Inner shadow on the side facing away from the light */}
+        <path d={STAR_PATH} fill={`url(#${shadowId})`} />
+
+        {/* Layer 6 — Subtle facet light on the side facing the light */}
         <path
           d={STAR_PATH}
-          fill={`url(#${innerId})`}
+          fill={`url(#${facetId})`}
           style={{ mixBlendMode: "screen" }}
         />
 
-        {/* Layer 4 — barely-there rim highlight on the lit side */}
+        {/* Layer 7 — Soft cyan rim highlight on the lit edge */}
         <path
           d={STAR_PATH}
           fill={`url(#${rimId})`}
           filter={`url(#${blurId})`}
           style={{ mixBlendMode: "screen" }}
         />
-
-        {/* Layer 5 — bright core showing through the star's center */}
-        <g transform="translate(100 100) scale(0.5) translate(-100 -100)">
-          <path d={STAR_PATH} fill={`url(#${coreId})`} />
-        </g>
       </svg>
     </div>
   );

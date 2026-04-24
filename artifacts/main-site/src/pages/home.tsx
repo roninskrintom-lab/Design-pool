@@ -83,11 +83,14 @@ export default function Home() {
             glowReach={1100}
             brightness={0.95}
             spread={1.3}
-            yBias={280}
+            yBias={250}
             lampRadius={380}
             lampIntensity={1}
             streakReach={780}
             streakStrength={1}
+            starShadowSize={560}
+            starShadowBlur={36}
+            starShadowOpacity={0.55}
           />
         </motion.div>
 

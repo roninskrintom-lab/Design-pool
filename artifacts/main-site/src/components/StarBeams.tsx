@@ -1,5 +1,6 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { getLightSourcePosition } from "@/lib/lightSource";
+import { STAR_PATH } from "@/lib/starPath";
 
 interface StarBeamsProps {
   /** Outer reach of the soft drifting ambient glow in CSS pixels */
@@ -22,6 +23,16 @@ interface StarBeamsProps {
   streakReach?: number;
   /** Strength of the directional streaks (0 = none, 1 = strong) */
   streakStrength?: number;
+  /**
+   * Size (px) of the soft volumetric shadow drawn in the star's silhouette
+   * over the back-light. Emulates the penumbra around an occluder. Set to 0
+   * to disable. Should roughly match the actual star size.
+   */
+  starShadowSize?: number;
+  /** Gaussian blur amount applied to the shadow shape (px) */
+  starShadowBlur?: number;
+  /** Opacity of the shadow shape (0..1) */
+  starShadowOpacity?: number;
   className?: string;
 }
 
@@ -43,12 +54,18 @@ export default function StarBeams({
   lampIntensity = 1,
   streakReach = 720,
   streakStrength = 1,
+  starShadowSize = 0,
+  starShadowBlur = 32,
+  starShadowOpacity = 0.55,
   className = "",
 }: StarBeamsProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number | null>(null);
   const startRef = useRef(performance.now());
   const sizeRef = useRef({ w: 0, h: 0 });
+
+  // Build the star Path2D once — used for the shadow halo (cheap & reusable)
+  const starPath = useMemo(() => new Path2D(STAR_PATH), []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -174,6 +191,26 @@ export default function StarBeams({
       ctx.fillStyle = hot;
       ctx.fillRect(cx - lampRadius, cy - lampRadius, lampRadius * 2, lampRadius * 2);
 
+      // ===== Layer 6: volumetric occlusion shadow at the star's silhouette =====
+      // A blurred dark star shape darkens the back-light exactly where the
+      // star sits, creating the soft penumbra you'd expect when a solid
+      // object blocks a diffuse light source. Drawn slightly larger than
+      // the actual star so the shadow extends a touch past the silhouette
+      // edge, blending into the surrounding glow. The real SVG star sits
+      // on top of the canvas in the DOM — the dark shape underneath gives
+      // the silhouette a believable "shadowed border" feel.
+      if (starShadowSize > 0) {
+        const sScale = starShadowSize / 200;
+        ctx.save();
+        ctx.filter = `blur(${starShadowBlur}px)`;
+        ctx.fillStyle = `hsla(228, 95%, 4%, ${starShadowOpacity})`;
+        ctx.translate(cx, cy);
+        ctx.scale(sScale, sScale);
+        ctx.translate(-100, -100);
+        ctx.fill(starPath);
+        ctx.restore();
+      }
+
       if (visible && !reducedMotion) {
         rafRef.current = requestAnimationFrame(draw);
       } else {
@@ -202,7 +239,20 @@ export default function StarBeams({
       io.disconnect();
       window.removeEventListener("resize", resize);
     };
-  }, [glowReach, brightness, spread, yBias]);
+  }, [
+    glowReach,
+    brightness,
+    spread,
+    yBias,
+    lampRadius,
+    lampIntensity,
+    streakReach,
+    streakStrength,
+    starShadowSize,
+    starShadowBlur,
+    starShadowOpacity,
+    starPath,
+  ]);
 
   return (
     <canvas
