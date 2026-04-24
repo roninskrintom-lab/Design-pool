@@ -80,17 +80,17 @@ export default function Home() {
           style={{ opacity: heroFade }}
         >
           <StarBeams
-            glowReach={1100}
-            brightness={0.95}
-            spread={1.3}
+            glowReach={1200}
+            brightness={1.1}
+            spread={1.35}
             yBias={250}
-            lampRadius={380}
-            lampIntensity={1}
-            streakReach={780}
-            streakStrength={1}
-            starShadowSize={560}
-            starShadowBlur={36}
-            starShadowOpacity={0.55}
+            lampRadius={440}
+            lampIntensity={1.15}
+            streakReach={820}
+            streakStrength={1.1}
+            starShadowSize={520}
+            starShadowBlur={22}
+            starShadowOpacity={0.32}
           />
         </motion.div>
 
