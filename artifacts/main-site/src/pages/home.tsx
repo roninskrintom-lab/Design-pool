@@ -8,6 +8,7 @@ import ScrollProgress from "@/components/ScrollProgress";
 import WarpStreaks from "@/components/WarpStreaks";
 import HorizonGlow from "@/components/HorizonGlow";
 import CursorGlow from "@/components/CursorGlow";
+import SparkleField from "@/components/SparkleField";
 
 export default function Home() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -65,21 +66,21 @@ export default function Home() {
       </nav>
 
       {/* HERO SECTION */}
-      <section className="relative min-h-screen w-full flex items-center justify-center overflow-hidden">
+      <section className="relative min-h-screen w-full flex flex-col items-center overflow-hidden pt-32 md:pt-40">
+        {/* Sparkles drifting in the background */}
+        <div className="absolute inset-0 z-0">
+          <SparkleField count={70} />
+        </div>
+
+        {/* Star anchored lower, behind the text */}
         <motion.div
-          className="absolute inset-0 z-0"
+          className="absolute inset-x-0 top-[42%] flex items-start justify-center z-0"
           style={{ opacity: heroFade, scale: heroScale }}
         >
-          <div className="absolute inset-0 flex items-center justify-center">
-            <GlowingStar size={620} />
-          </div>
-          {/* Star light bleeds */}
-          <div className="absolute inset-0">
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[1200px] h-[1px] bg-gradient-to-r from-transparent via-primary/60 to-transparent blur-sm" />
-          </div>
+          <GlowingStar size={680} />
         </motion.div>
 
-        <div className="relative z-10 flex flex-col items-center justify-center text-center px-4 w-full max-w-7xl mx-auto pt-16">
+        <div className="relative z-10 flex flex-col items-center text-center px-4 w-full max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -96,7 +97,7 @@ export default function Home() {
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1.2, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
-            className="font-serif text-5xl md:text-7xl lg:text-8xl leading-[1.05] tracking-tight max-w-5xl text-glow-soft"
+            className="font-serif text-4xl md:text-6xl lg:text-7xl leading-[1.05] tracking-tight max-w-4xl text-glow-soft"
           >
             <span className="text-shimmer">Delivering deep liquidity</span>
             <br />
@@ -107,22 +108,22 @@ export default function Home() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 1, delay: 1 }}
-            className="mt-8 text-base md:text-lg text-foreground/60 max-w-xl font-light leading-relaxed"
+            className="mt-6 text-sm md:text-base text-foreground/55 max-w-md font-light leading-relaxed"
           >
             Empowering institutions with bespoke trading solutions
-            <br /> and seamless market access.
+            and seamless market access.
           </motion.p>
-
-          <motion.div
-            className="absolute -bottom-6 right-8 z-20 flex items-center gap-2 opacity-70"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.7 }}
-            transition={{ delay: 1.5, duration: 1 }}
-          >
-            <span className="text-[11px] tracking-[0.2em] uppercase">Scroll</span>
-            <ArrowDown className="w-3 h-3 animate-bounce text-primary" />
-          </motion.div>
         </div>
+
+        <motion.div
+          className="absolute bottom-8 right-8 z-20 flex items-center gap-2 opacity-70"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 0.7 }}
+          transition={{ delay: 1.5, duration: 1 }}
+        >
+          <span className="text-[11px] tracking-[0.2em] uppercase">Scroll</span>
+          <ArrowDown className="w-3 h-3 animate-bounce text-primary" />
+        </motion.div>
       </section>
 
       {/* OVERVIEW SECTION */}
