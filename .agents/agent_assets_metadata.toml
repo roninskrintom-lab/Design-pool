@@ -1,0 +1,26 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "etwZVBWvzWS8zJ3jA4sP-"
+uri = "file://artifacts/main-site/src/assets/images/hero-bg.png"
+type = "image"
+title = "Dark abstract architectural hero"
+
+[[generated]]
+id = "OAVGTMt9gm8QWAB8a3zCG"
+uri = "file://artifacts/main-site/src/assets/images/work-1.png"
+type = "image"
+title = "Luxury editorial fashion photo"
+
+[[generated]]
+id = "Lv0L1ykR0GwDazT96M408"
+uri = "file://artifacts/main-site/src/assets/images/work-2.png"
+type = "image"
+title = "Abstract sleek product design"
+
+[[generated]]
+id = "o_vyFiJ83zkE14rEWoeJQ"
+uri = "file://artifacts/main-site/src/assets/images/studio.png"
+type = "image"
+title = "Minimalist luxury creative studio"
