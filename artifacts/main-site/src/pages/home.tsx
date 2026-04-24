@@ -93,7 +93,7 @@ export default function Home() {
           className="absolute inset-x-0 top-[50%] flex items-start justify-center z-[1]"
           style={{ opacity: heroFade, scale: heroScale }}
         >
-          <GlowingStar size={500} />
+          <GlowingStar size={500} withBackdrop={false} />
         </motion.div>
 
         <div className="relative z-10 flex flex-col items-center text-center px-4 w-full max-w-6xl mx-auto">

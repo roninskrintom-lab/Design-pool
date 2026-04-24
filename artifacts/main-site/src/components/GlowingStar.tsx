@@ -6,6 +6,12 @@ interface GlowingStarProps {
   className?: string;
   /** Optional star rotation getter — used to keep rim light in world-space */
   getRotationDeg?: () => number;
+  /**
+   * If true (default), renders a built-in cyan back-light glow behind the star.
+   * Set to false when an external StarBeams already provides the backlight
+   * (e.g. in the hero), to avoid double-glow.
+   */
+  withBackdrop?: boolean;
 }
 
 const STAR_PATH =
@@ -21,6 +27,7 @@ export default function GlowingStar({
   size = 360,
   className = "",
   getRotationDeg,
+  withBackdrop = true,
 }: GlowingStarProps) {
   const startRef = useRef(performance.now());
   const rimGradRef = useRef<SVGLinearGradientElement>(null);
@@ -106,7 +113,32 @@ export default function GlowingStar({
       className={`relative ${className}`}
       style={{ width: size, height: size }}
     >
-      <svg viewBox="0 0 200 200" className="w-full h-full overflow-visible">
+      {/* Built-in soft cyan back-light glow — used when there is no external
+          StarBeams behind the star (e.g. decorative stars in lower sections). */}
+      {withBackdrop && (
+        <div
+          aria-hidden
+          className="absolute pointer-events-none"
+          style={{
+            left: "50%",
+            top: "50%",
+            width: size * 2.6,
+            height: size * 2.6,
+            transform: "translate(-50%, -50%)",
+            background:
+              "radial-gradient(circle at center," +
+              " hsla(190, 100%, 90%, 0.55) 0%," +
+              " hsla(195, 100%, 70%, 0.32) 12%," +
+              " hsla(200, 100%, 55%, 0.18) 28%," +
+              " hsla(210, 95%, 40%, 0.07) 50%," +
+              " hsla(220, 90%, 25%, 0.02) 75%," +
+              " transparent 100%)",
+            filter: "blur(2px)",
+          }}
+        />
+      )}
+
+      <svg viewBox="0 0 200 200" className="relative w-full h-full overflow-visible">
         <defs>
           {/* Outer star — slightly lighter blue (the "rim" / outline) */}
           <linearGradient id={baseId} x1="50%" y1="0%" x2="50%" y2="100%">
