@@ -73,17 +73,20 @@ export default function Home() {
           <SparkleField count={70} />
         </div>
 
-        {/* Light beams from a moving source behind the star */}
+        {/* Bright back-light + soft volumetric shadow rays cast by the star */}
         <motion.div
           className="absolute inset-x-0 top-[42%] flex items-start justify-center z-0 pointer-events-none"
           style={{ opacity: heroFade }}
         >
-          <div className="relative" style={{ width: 1400, height: 900, maxWidth: "140vw" }}>
-            <StarBeams count={32} reach={0.7} intensity={0.95} />
+          <div
+            className="relative"
+            style={{ width: 1500, height: 1500, marginTop: -410 }}
+          >
+            <StarBeams starSize={680} brightness={0.55} glowReach={520} />
           </div>
         </motion.div>
 
-        {/* Star anchored lower, behind the text */}
+        {/* Star anchored lower, on top of the back-light */}
         <motion.div
           className="absolute inset-x-0 top-[42%] flex items-start justify-center z-[1]"
           style={{ opacity: heroFade, scale: heroScale }}
