@@ -70,7 +70,7 @@ export default function Home() {
       <section className="relative min-h-screen w-full flex flex-col items-center overflow-hidden pt-32 md:pt-40">
         {/* Sparkles drifting in the background */}
         <div className="absolute inset-0 z-0">
-          <SparkleField count={70} />
+          <SparkleField count={140} />
         </div>
 
         {/* Wide cinematic cyan back-light — softbox style, no discrete rays */}
@@ -78,15 +78,15 @@ export default function Home() {
           className="absolute inset-0 z-0 pointer-events-none"
           style={{ opacity: heroFade }}
         >
-          <StarBeams glowReach={1100} brightness={0.95} spread={1.5} yBias={120} />
+          <StarBeams glowReach={1400} brightness={1} spread={1.4} yBias={180} />
         </motion.div>
 
         {/* Dark silhouette star — backlit by the glow above */}
         <motion.div
-          className="absolute inset-x-0 top-[48%] flex items-start justify-center z-[1]"
+          className="absolute inset-x-0 top-[50%] flex items-start justify-center z-[1]"
           style={{ opacity: heroFade, scale: heroScale }}
         >
-          <GlowingStar size={520} />
+          <GlowingStar size={500} />
         </motion.div>
 
         <div className="relative z-10 flex flex-col items-center text-center px-4 w-full max-w-6xl mx-auto">

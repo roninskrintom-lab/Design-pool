@@ -108,14 +108,21 @@ export default function GlowingStar({
     >
       <svg viewBox="0 0 200 200" className="w-full h-full overflow-visible">
         <defs>
-          {/* Base dark navy fill — saturated deep blue, subtle vertical gradient */}
+          {/* Outer star — slightly lighter blue (the "rim" / outline) */}
           <linearGradient id={baseId} x1="50%" y1="0%" x2="50%" y2="100%">
-            <stop offset="0%" stopColor="hsl(218 85% 22%)" />
-            <stop offset="50%" stopColor="hsl(220 88% 16%)" />
-            <stop offset="100%" stopColor="hsl(224 90% 10%)" />
+            <stop offset="0%" stopColor="hsl(212 75% 38%)" />
+            <stop offset="55%" stopColor="hsl(215 78% 30%)" />
+            <stop offset="100%" stopColor="hsl(220 82% 22%)" />
           </linearGradient>
 
-          {/* Inner facet shading — very subtle lit/shadow gradient */}
+          {/* Inner concentric star — darker, gives the "double outline" depth */}
+          <linearGradient id={`${baseId}-inner`} x1="50%" y1="0%" x2="50%" y2="100%">
+            <stop offset="0%" stopColor="hsl(220 85% 22%)" />
+            <stop offset="55%" stopColor="hsl(222 88% 16%)" />
+            <stop offset="100%" stopColor="hsl(225 90% 11%)" />
+          </linearGradient>
+
+          {/* Subtle directional shading — adds barely-there facet lighting */}
           <linearGradient
             ref={innerGradRef}
             id={innerId}
@@ -124,12 +131,12 @@ export default function GlowingStar({
             x2="80%"
             y2="20%"
           >
-            <stop offset="0%" stopColor="hsl(225 90% 6%)" stopOpacity="0.4" />
+            <stop offset="0%" stopColor="hsl(225 90% 5%)" stopOpacity="0.3" />
             <stop offset="50%" stopColor="hsl(220 80% 12%)" stopOpacity="0" />
-            <stop offset="100%" stopColor="hsl(205 95% 38%)" stopOpacity="0.18" />
+            <stop offset="100%" stopColor="hsl(200 95% 50%)" stopOpacity="0.1" />
           </linearGradient>
 
-          {/* Rim light — soft cyan edge highlight on lit side, very subtle */}
+          {/* Rim light — barely-there cyan edge glow tracking light direction */}
           <linearGradient
             ref={rimGradRef}
             id={rimId}
@@ -139,41 +146,46 @@ export default function GlowingStar({
             y2="20%"
           >
             <stop offset="0%" stopColor="hsla(200, 100%, 90%, 0)" />
-            <stop offset="60%" stopColor="hsla(195, 100%, 88%, 0.12)" />
-            <stop offset="100%" stopColor="hsla(190, 100%, 92%, 0.4)" />
+            <stop offset="65%" stopColor="hsla(195, 100%, 88%, 0.06)" />
+            <stop offset="100%" stopColor="hsla(190, 100%, 92%, 0.18)" />
           </linearGradient>
 
-          {/* Tiny bright core — small luminous dot near the center,
-              like a pinhole of the backlight showing through */}
+          {/* Tiny bright core — luminous dot in the geometric center */}
           <radialGradient
             ref={coreGlowRef}
             id={coreId}
             cx="50%"
             cy="50%"
-            r="18%"
+            r="22%"
           >
-            <stop offset="0%" stopColor="hsla(195, 100%, 95%, 0.85)" />
-            <stop offset="35%" stopColor="hsla(198, 100%, 78%, 0.4)" />
+            <stop offset="0%" stopColor="hsla(190, 100%, 98%, 0.95)" />
+            <stop offset="22%" stopColor="hsla(195, 100%, 88%, 0.7)" />
+            <stop offset="55%" stopColor="hsla(200, 100%, 70%, 0.3)" />
             <stop offset="100%" stopColor="hsla(205, 100%, 55%, 0)" />
           </radialGradient>
 
-          {/* Soft outline blur — adds the "backlit edge bleed" */}
+          {/* Soft outline blur */}
           <filter id={blurId} x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="0.8" />
+            <feGaussianBlur stdDeviation="0.6" />
           </filter>
         </defs>
 
-        {/* Layer 1 — base dark navy star */}
+        {/* Layer 1 — outer star (lighter blue rim/shell) */}
         <path d={STAR_PATH} fill={`url(#${baseId})`} />
 
-        {/* Layer 2 — inner facet shading (subtle lit/shadow gradient) */}
+        {/* Layer 2 — inner concentric star (darker, slightly inset) */}
+        <g transform="translate(100 100) scale(0.86) translate(-100 -100)">
+          <path d={STAR_PATH} fill={`url(#${baseId}-inner)`} />
+        </g>
+
+        {/* Layer 3 — subtle directional facet shading on top */}
         <path
           d={STAR_PATH}
           fill={`url(#${innerId})`}
           style={{ mixBlendMode: "screen" }}
         />
 
-        {/* Layer 3 — bright rim highlight on the lit side */}
+        {/* Layer 4 — barely-there rim highlight on the lit side */}
         <path
           d={STAR_PATH}
           fill={`url(#${rimId})`}
@@ -181,8 +193,8 @@ export default function GlowingStar({
           style={{ mixBlendMode: "screen" }}
         />
 
-        {/* Layer 4 — small bright core showing through the star's center */}
-        <g transform="translate(100 100) scale(0.42) translate(-100 -100)">
+        {/* Layer 5 — bright core showing through the star's center */}
+        <g transform="translate(100 100) scale(0.5) translate(-100 -100)">
           <path d={STAR_PATH} fill={`url(#${coreId})`} />
         </g>
       </svg>
