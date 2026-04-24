@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { getLightSourcePosition } from "@/lib/lightSource";
 
 interface StarBeamsProps {
   /** Number of radial beams */
@@ -79,11 +80,13 @@ export default function StarBeams({
 
       ctx.clearRect(0, 0, w, h);
 
-      // Source point — drifts behind the star in a slow lissajous pattern
+      // Source point — drifts behind the star in a slow lissajous pattern.
+      // Shared with GlowingStar so the star's facet shading stays in sync.
       const cx = w / 2;
       const cy = h / 2;
-      const driftX = Math.sin(t * 0.22) * w * 0.08 + Math.cos(t * 0.13) * w * 0.04;
-      const driftY = Math.cos(t * 0.18) * h * 0.06 + Math.sin(t * 0.11) * h * 0.04;
+      const ls = getLightSourcePosition(t);
+      const driftX = ls.x * w * 0.12;
+      const driftY = ls.y * h * 0.1;
       const sx = cx + driftX;
       const sy = cy + driftY;
 
