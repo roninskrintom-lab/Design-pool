@@ -150,18 +150,20 @@ export default function GlowingStar({
             <stop offset="100%" stopColor="hsla(190, 100%, 92%, 0.18)" />
           </linearGradient>
 
-          {/* Tiny bright core — luminous dot in the geometric center */}
+          {/* Subtle cyan core — represents the backlight bleeding through the
+              center of the star. Softer than before because the StarBeams lamp
+              now provides the main "light from behind" sensation. */}
           <radialGradient
             ref={coreGlowRef}
             id={coreId}
             cx="50%"
             cy="50%"
-            r="22%"
+            r="28%"
           >
-            <stop offset="0%" stopColor="hsla(190, 100%, 98%, 0.95)" />
-            <stop offset="22%" stopColor="hsla(195, 100%, 88%, 0.7)" />
-            <stop offset="55%" stopColor="hsla(200, 100%, 70%, 0.3)" />
-            <stop offset="100%" stopColor="hsla(205, 100%, 55%, 0)" />
+            <stop offset="0%" stopColor="hsla(192, 100%, 92%, 0.55)" />
+            <stop offset="30%" stopColor="hsla(196, 100%, 78%, 0.32)" />
+            <stop offset="65%" stopColor="hsla(202, 100%, 60%, 0.12)" />
+            <stop offset="100%" stopColor="hsla(208, 100%, 50%, 0)" />
           </radialGradient>
 
           {/* Soft outline blur */}

@@ -78,7 +78,14 @@ export default function Home() {
           className="absolute inset-0 z-0 pointer-events-none"
           style={{ opacity: heroFade }}
         >
-          <StarBeams glowReach={1400} brightness={1} spread={1.4} yBias={180} />
+          <StarBeams
+            glowReach={1400}
+            brightness={1}
+            spread={1.4}
+            yBias={250}
+            lampRadius={420}
+            lampIntensity={1}
+          />
         </motion.div>
 
         {/* Dark silhouette star — backlit by the glow above */}
