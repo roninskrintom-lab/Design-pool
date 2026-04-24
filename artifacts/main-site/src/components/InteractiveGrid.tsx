@@ -2,17 +2,27 @@ import { useEffect, useRef } from "react";
 
 interface InteractiveGridProps {
   cellSize?: number;
+  gap?: number;
   className?: string;
+  baseAlpha?: number;
+  hotAlpha?: number;
+  randomPulse?: boolean;
 }
 
 export default function InteractiveGrid({
-  cellSize = 60,
+  cellSize = 32,
+  gap = 4,
   className = "",
+  baseAlpha = 0.04,
+  hotAlpha = 0.95,
+  randomPulse = true,
 }: InteractiveGridProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const mouseRef = useRef({ x: -9999, y: -9999 });
   const rafRef = useRef<number | null>(null);
   const sizeRef = useRef({ w: 0, h: 0, dpr: 1 });
+  const seedsRef = useRef<number[]>([]);
+  const startRef = useRef(performance.now());
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -20,13 +30,23 @@ export default function InteractiveGrid({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let visible = true;
+
     const resize = () => {
-      const dpr = window.devicePixelRatio || 1;
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
       const rect = canvas.getBoundingClientRect();
       sizeRef.current = { w: rect.width, h: rect.height, dpr };
       canvas.width = rect.width * dpr;
       canvas.height = rect.height * dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      const cols = Math.ceil(rect.width / (cellSize + gap)) + 1;
+      const rows = Math.ceil(rect.height / (cellSize + gap)) + 1;
+      const total = cols * rows;
+      const seeds: number[] = [];
+      for (let i = 0; i < total; i++) seeds.push(Math.random());
+      seedsRef.current = seeds;
     };
 
     const onMove = (e: MouseEvent) => {
@@ -44,72 +64,76 @@ export default function InteractiveGrid({
     const draw = () => {
       const { w, h } = sizeRef.current;
       const m = mouseRef.current;
+      const t = (performance.now() - startRef.current) / 1000;
       ctx.clearRect(0, 0, w, h);
 
-      const cols = Math.ceil(w / cellSize);
-      const rows = Math.ceil(h / cellSize);
-      const radius = cellSize * 4;
+      const step = cellSize + gap;
+      const cols = Math.ceil(w / step) + 1;
+      const rows = Math.ceil(h / step) + 1;
+      const radius = cellSize * 6;
 
-      for (let i = 0; i <= cols; i++) {
-        for (let j = 0; j <= rows; j++) {
-          const x = i * cellSize;
-          const y = j * cellSize;
+      let idx = 0;
+      for (let i = 0; i < cols; i++) {
+        for (let j = 0; j < rows; j++) {
+          const x = i * step;
+          const y = j * step;
+          const cx = x + cellSize / 2;
+          const cy = y + cellSize / 2;
 
-          const dx = x - m.x;
-          const dy = y - m.y;
+          const dx = cx - m.x;
+          const dy = cy - m.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
-          const influence = Math.max(0, 1 - dist / radius);
+          const proximity = Math.max(0, 1 - dist / radius);
+          const easedProx = proximity * proximity;
 
-          // Base dot
-          const baseAlpha = 0.08;
-          const hotAlpha = 0.6;
-          const alpha = baseAlpha + (hotAlpha - baseAlpha) * influence;
+          const seed = seedsRef.current[idx++] ?? 0;
+          const pulse = randomPulse
+            ? 0.5 + 0.5 * Math.sin(t * 0.7 + seed * 6.28)
+            : 0;
+          const ambient = baseAlpha + pulse * 0.06;
 
-          // Color shift toward primary (gold) when close
-          const r = Math.round(212 * influence + 255 * (1 - influence));
-          const g = Math.round(175 * influence + 255 * (1 - influence));
-          const b = Math.round(55 * influence + 255 * (1 - influence));
+          const alpha = Math.min(1, ambient + (hotAlpha - ambient) * easedProx);
 
-          const dotSize = 1 + influence * 2.5;
+          // Color: deep blue at rest -> bright cyan/white at hot
+          const hot = easedProx;
+          const r = Math.round(40 * (1 - hot) + 220 * hot);
+          const g = Math.round(80 * (1 - hot) + 240 * hot);
+          const b = Math.round(180 * (1 - hot) + 255 * hot);
 
           ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
-          ctx.beginPath();
-          ctx.arc(x, y, dotSize, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
+          ctx.fillRect(x, y, cellSize, cellSize);
 
-      // Draw cell highlight under cursor
-      if (m.x > -9000) {
-        const cellX = Math.floor(m.x / cellSize) * cellSize;
-        const cellY = Math.floor(m.y / cellSize) * cellSize;
-        ctx.strokeStyle = "rgba(212, 175, 55, 0.35)";
-        ctx.lineWidth = 1;
-        ctx.strokeRect(cellX, cellY, cellSize, cellSize);
-
-        // Neighbor cells with decreasing alpha
-        for (let i = -2; i <= 2; i++) {
-          for (let j = -2; j <= 2; j++) {
-            if (i === 0 && j === 0) continue;
-            const dist = Math.sqrt(i * i + j * j);
-            const a = Math.max(0, 0.18 - dist * 0.06);
-            if (a <= 0) continue;
-            ctx.strokeStyle = `rgba(212, 175, 55, ${a})`;
-            ctx.strokeRect(
-              cellX + i * cellSize,
-              cellY + j * cellSize,
-              cellSize,
-              cellSize,
-            );
+          // Inner brighter core for hot cells
+          if (hot > 0.4) {
+            ctx.fillStyle = `rgba(255, 255, 255, ${(hot - 0.4) * 0.9})`;
+            const inset = cellSize * 0.25;
+            ctx.fillRect(x + inset, y + inset, cellSize - inset * 2, cellSize - inset * 2);
           }
         }
       }
 
-      rafRef.current = requestAnimationFrame(draw);
+      if (visible && !reducedMotion) {
+        rafRef.current = requestAnimationFrame(draw);
+      } else {
+        rafRef.current = null;
+      }
     };
 
     resize();
     draw();
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          visible = e.isIntersecting;
+          if (visible && rafRef.current === null && !reducedMotion) {
+            draw();
+          }
+        }
+      },
+      { rootMargin: "100px" }
+    );
+    io.observe(canvas);
 
     window.addEventListener("resize", resize);
     window.addEventListener("mousemove", onMove);
@@ -117,11 +141,12 @@ export default function InteractiveGrid({
 
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      io.disconnect();
       window.removeEventListener("resize", resize);
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseleave", onLeave);
     };
-  }, [cellSize]);
+  }, [cellSize, gap, baseAlpha, hotAlpha, randomPulse]);
 
   return (
     <canvas

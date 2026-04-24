@@ -1,13 +1,13 @@
 import { motion, useScroll, useTransform } from "framer-motion";
-import { ArrowRight, ArrowDown } from "lucide-react";
+import { ArrowRight, ArrowDown, Plus, Globe } from "lucide-react";
 import { useRef } from "react";
 import InteractiveGrid from "@/components/InteractiveGrid";
 import SectionReveal from "@/components/SectionReveal";
-
-import heroBg from "@/assets/images/hero-bg.png";
-import work1 from "@/assets/images/work-1.png";
-import work2 from "@/assets/images/work-2.png";
-import studio from "@/assets/images/studio.png";
+import GlowingStar from "@/components/GlowingStar";
+import ScrollProgress from "@/components/ScrollProgress";
+import WarpStreaks from "@/components/WarpStreaks";
+import HorizonGlow from "@/components/HorizonGlow";
+import CursorGlow from "@/components/CursorGlow";
 
 export default function Home() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -16,261 +16,400 @@ export default function Home() {
     offset: ["start start", "end end"],
   });
 
-  const heroY = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
-  const heroScale = useTransform(scrollYProgress, [0, 1], [1, 1.1]);
+  const heroFade = useTransform(scrollYProgress, [0, 0.15], [1, 0]);
+  const heroScale = useTransform(scrollYProgress, [0, 0.2], [1, 1.2]);
 
   return (
-    <div ref={containerRef} className="bg-background text-foreground min-h-screen relative">
-      {/* Global interactive grid background */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <InteractiveGrid cellSize={56} />
-      </div>
+    <div ref={containerRef} className="bg-background text-foreground min-h-screen relative overflow-x-hidden">
+      <CursorGlow />
+      <ScrollProgress />
+
+      {/* Top atmospheric glow */}
+      <div className="pointer-events-none fixed top-0 left-0 right-0 h-[60vh] z-0"
+        style={{
+          background:
+            "radial-gradient(ellipse 80% 60% at 50% 0%, hsl(215 90% 35% / 0.4), transparent 70%)",
+        }}
+      />
 
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-8 py-6 mix-blend-difference">
-        <div className="font-serif text-2xl font-bold tracking-wider">AURA.</div>
-        <div className="hidden md:flex items-center gap-12 text-sm font-medium tracking-widest uppercase">
-          <a href="#work" className="hover:text-primary transition-colors">Work</a>
-          <a href="#studio" className="hover:text-primary transition-colors">Studio</a>
+      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-8 py-6">
+        <div className="flex items-center gap-2">
+          <div className="relative w-5 h-5">
+            <div className="absolute inset-0 bg-primary rounded-sm rotate-45 opacity-30 blur-sm" />
+            <Plus className="w-5 h-5 text-primary absolute inset-0 rotate-45" strokeWidth={2.5} />
+          </div>
+          <div className="font-sans text-lg font-medium tracking-tight">
+            <span className="text-primary">aura</span>
+            <span className="text-foreground/90">studio</span>
+          </div>
+        </div>
+
+        <div className="hidden md:flex items-center gap-10 text-xs font-medium uppercase tracking-[0.18em] glass px-6 py-3 rounded-full">
+          <a href="#about" className="hover:text-primary transition-colors">About</a>
+          <a href="#solutions" className="hover:text-primary transition-colors">Solutions</a>
           <a href="#contact" className="hover:text-primary transition-colors">Contact</a>
         </div>
-        <button className="text-sm font-medium tracking-widest uppercase hover:text-primary transition-colors">
-          Menu
-        </button>
-      </nav>
 
-      {/* Hero Section */}
-      <section className="relative h-screen w-full flex items-center justify-center overflow-hidden z-10">
-        <motion.div
-          className="absolute inset-0 z-0"
-          style={{ y: heroY, scale: heroScale }}
-        >
-          <div className="absolute inset-0 bg-black/50 z-10 mix-blend-multiply" />
-          <img
-            src={heroBg}
-            alt="Hero abstract"
-            className="w-full h-full object-cover object-center"
-            onError={(e) => { e.currentTarget.src = "https://images.unsplash.com/photo-1600607686527-6fb886090705?q=80&w=2000&auto=format&fit=crop"; }}
-          />
-        </motion.div>
-
-        {/* Hero-specific tighter grid */}
-        <div className="absolute inset-0 z-[5] pointer-events-none opacity-90">
-          <InteractiveGrid cellSize={44} />
-        </div>
-
-        <div className="relative z-20 flex flex-col items-center justify-center text-center px-4 w-full max-w-7xl mx-auto mt-20">
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <h1 className="font-serif text-6xl md:text-8xl lg:text-9xl leading-[0.9] tracking-tighter">
-              Crafting <span className="text-primary italic">Digital</span><br />
-              Masterpieces.
-            </h1>
-          </motion.div>
-
-          <motion.p
-            className="mt-8 text-lg md:text-xl text-foreground/70 max-w-2xl font-light"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 1, delay: 0.8 }}
-          >
-            We are a luxury creative agency shaping unignorable brand experiences for the bold and the visionary.
-          </motion.p>
-        </div>
-
-        <motion.div
-          className="absolute bottom-12 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-4 opacity-50"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 0.5 }}
-          transition={{ delay: 1.5, duration: 1 }}
-        >
-          <span className="text-xs tracking-widest uppercase">Scroll to explore</span>
-          <ArrowDown className="w-4 h-4 animate-bounce" />
-        </motion.div>
-      </section>
-
-      {/* Manifesto Section */}
-      <SectionReveal className="py-32 px-4 md:px-12 max-w-7xl mx-auto relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-12">
-          <div className="md:col-span-4">
-            <h2 className="text-sm tracking-widest uppercase text-primary font-semibold mb-6">The Manifesto</h2>
-          </div>
-          <div className="md:col-span-8">
-            <motion.p
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-100px" }}
-              transition={{ duration: 0.8 }}
-              className="text-3xl md:text-5xl font-serif leading-tight"
-            >
-              We believe in the power of <em className="text-primary">intentional design</em>. Every pixel, every interaction, every word must serve a singular purpose: to make your audience feel something profound.
-            </motion.p>
-          </div>
-        </div>
-      </SectionReveal>
-
-      {/* Featured Work */}
-      <SectionReveal id="work" className="py-20 w-full overflow-hidden relative z-10">
-        <div className="px-4 md:px-12 mb-16 flex justify-between items-end max-w-[1400px] mx-auto">
-          <h2 className="text-5xl md:text-7xl font-serif">Selected Works</h2>
-          <button className="hidden md:flex items-center gap-2 text-sm tracking-widest uppercase hover:text-primary transition-colors pb-2">
-            View All <ArrowRight className="w-4 h-4" />
+        <div className="flex items-center gap-3">
+          <button className="hidden md:flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-foreground/70 hover:text-primary transition-colors">
+            <Globe className="w-4 h-4" /> English
+          </button>
+          <button className="glass px-4 py-2 rounded-full text-xs uppercase tracking-[0.18em] hover:bg-primary/10 hover:border-primary/40 transition-all">
+            Log In
+          </button>
+          <button className="bg-primary text-primary-foreground px-4 py-2 rounded-full text-xs uppercase tracking-[0.18em] flex items-center gap-2 hover:bg-white transition-all glow-cyan">
+            Onboard <ArrowRight className="w-3 h-3" />
           </button>
         </div>
+      </nav>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 px-4 md:px-12 max-w-[1400px] mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-            className="group cursor-pointer"
-          >
-            <div className="relative overflow-hidden aspect-[3/4] mb-6">
-              <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors duration-500 z-10" />
-              <img
-                src={work1}
-                alt="Project One"
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                onError={(e) => { e.currentTarget.src = "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1200&auto=format&fit=crop"; }}
-              />
-            </div>
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="text-2xl font-serif mb-2 group-hover:text-primary transition-colors">Maison De L'Art</h3>
-                <p className="text-foreground/60 text-sm">Art Direction, Digital</p>
-              </div>
-              <span className="text-xs tracking-wider">2024</span>
-            </div>
-          </motion.div>
+      {/* HERO SECTION */}
+      <section className="relative min-h-screen w-full flex items-center justify-center overflow-hidden">
+        <motion.div
+          className="absolute inset-0 z-0"
+          style={{ opacity: heroFade, scale: heroScale }}
+        >
+          <div className="absolute inset-0 flex items-center justify-center">
+            <GlowingStar size={620} />
+          </div>
+          {/* Star light bleeds */}
+          <div className="absolute inset-0">
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[1200px] h-[1px] bg-gradient-to-r from-transparent via-primary/60 to-transparent blur-sm" />
+          </div>
+        </motion.div>
 
+        <div className="relative z-10 flex flex-col items-center justify-center text-center px-4 w-full max-w-7xl mx-auto pt-16">
           <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="group cursor-pointer md:mt-32"
+            className="mb-8"
           >
-            <div className="relative overflow-hidden aspect-[3/4] mb-6">
-              <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors duration-500 z-10" />
-              <img
-                src={work2}
-                alt="Project Two"
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                onError={(e) => { e.currentTarget.src = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop"; }}
-              />
-            </div>
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="text-2xl font-serif mb-2 group-hover:text-primary transition-colors">Obsidian Core</h3>
-                <p className="text-foreground/60 text-sm">Brand Identity, Web</p>
-              </div>
-              <span className="text-xs tracking-wider">2023</span>
+            <div className="glass inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs">
+              <Plus className="w-3 h-3 text-primary rotate-45" />
+              <span className="tracking-wider">Introducing Aura Studio</span>
             </div>
           </motion.div>
+
+          <motion.h1
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1.2, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            className="font-serif text-5xl md:text-7xl lg:text-8xl leading-[1.05] tracking-tight max-w-5xl text-glow-soft"
+          >
+            <span className="text-shimmer">Delivering deep liquidity</span>
+            <br />
+            <span className="text-foreground/40">across off-exchange markets</span>
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1, delay: 1 }}
+            className="mt-8 text-base md:text-lg text-foreground/60 max-w-xl font-light leading-relaxed"
+          >
+            Empowering institutions with bespoke trading solutions
+            <br /> and seamless market access.
+          </motion.p>
+
+          <motion.div
+            className="absolute -bottom-6 right-8 z-20 flex items-center gap-2 opacity-70"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.7 }}
+            transition={{ delay: 1.5, duration: 1 }}
+          >
+            <span className="text-[11px] tracking-[0.2em] uppercase">Scroll</span>
+            <ArrowDown className="w-3 h-3 animate-bounce text-primary" />
+          </motion.div>
+        </div>
+      </section>
+
+      {/* OVERVIEW SECTION */}
+      <SectionReveal id="about" className="relative py-32 px-4 md:px-12 max-w-6xl mx-auto z-10">
+        <div className="text-center">
+          <div className="glass inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs mb-10">
+            <Plus className="w-3 h-3 text-primary rotate-45" />
+            <span className="tracking-wider">Company Overview</span>
+          </div>
+
+          <motion.p
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 1 }}
+            className="text-2xl md:text-4xl font-serif leading-snug max-w-4xl mx-auto"
+          >
+            <span className="text-foreground">Aura Studio reshapes institutional digital asset trading with bespoke OTC solutions,</span>{" "}
+            <span className="text-foreground/40">cutting-edge technology, and a compliance-first ethos—delivering precision, security, and agility for global markets.</span>
+          </motion.p>
+
+          {/* Glowing star anchor below text */}
+          <div className="relative mt-16 flex items-center justify-center min-h-[400px]">
+            <GlowingStar size={420} />
+          </div>
         </div>
       </SectionReveal>
 
-      {/* Studio / Image Section */}
-      <SectionReveal id="studio" className="py-32 w-full relative z-10">
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 1 }}
-          className="w-full aspect-[21/9] relative overflow-hidden"
-        >
-          <img
-            src={studio}
-            alt="Our Studio"
-            className="w-full h-full object-cover"
-            onError={(e) => { e.currentTarget.src = "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=2000&auto=format&fit=crop"; }}
-          />
-          <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-            <h2 className="text-6xl md:text-9xl font-serif text-white tracking-tight">The Studio</h2>
-          </div>
-        </motion.div>
+      {/* WARP / TRANSITION SECTION */}
+      <SectionReveal className="relative py-40 w-full overflow-hidden z-10">
+        <div className="absolute inset-0">
+          <WarpStreaks density={120} />
+          <div className="absolute inset-0 bg-gradient-radial from-transparent via-background/50 to-background pointer-events-none" />
+        </div>
+
+        <div className="relative z-10 max-w-6xl mx-auto text-center px-4">
+          <motion.h2
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 1.2 }}
+            className="font-serif text-5xl md:text-7xl tracking-tight"
+          >
+            Speed beyond <em className="text-primary text-glow">measure.</em>
+          </motion.h2>
+          <motion.p
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 1, delay: 0.4 }}
+            className="mt-6 text-lg text-foreground/60 max-w-2xl mx-auto"
+          >
+            Built on a high-performance backbone — every order, every execution, every signal moves at the speed of light.
+          </motion.p>
+        </div>
       </SectionReveal>
 
-      {/* Capabilities */}
-      <SectionReveal className="py-24 px-4 md:px-12 max-w-7xl mx-auto relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
-          <div>
-            <h2 className="text-4xl md:text-5xl font-serif mb-8">Capabilities</h2>
-            <p className="text-foreground/70 text-lg max-w-md">
-              We partner with visionary leaders to build brands that defy expectations and redefine categories.
-            </p>
+      {/* MOSAIC / SECURE SECTION */}
+      <SectionReveal id="solutions" className="relative py-32 w-full overflow-hidden z-10">
+        <div className="absolute inset-0">
+          <InteractiveGrid cellSize={28} gap={4} baseAlpha={0.03} hotAlpha={1} />
+        </div>
+        <div className="absolute inset-0 bg-gradient-to-r from-background via-transparent to-background pointer-events-none" />
+
+        <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-12">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8 mb-20">
+            <motion.h2
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
+              className="font-serif text-5xl md:text-7xl tracking-tight"
+            >
+              Secure. <em className="text-primary text-glow">Compliant.</em>
+            </motion.h2>
+            <motion.p
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="max-w-md text-foreground/60"
+            >
+              Move with confidence — your operations meet the highest regulatory standards by default.
+            </motion.p>
           </div>
-          <div className="space-y-8">
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
-              { num: "01", title: "Brand Identity", desc: "Naming, positioning, visual identity, and brand guidelines." },
-              { num: "02", title: "Digital Experience", desc: "Web design, e-commerce, application interfaces, and motion." },
-              { num: "03", title: "Content Creation", desc: "Art direction, 3D visualization, photography, and copywriting." },
-            ].map((cap, i) => (
+              { num: "01", title: "Institutional Grade", desc: "Built for funds, prop desks, and treasuries demanding zero compromise." },
+              { num: "02", title: "Regulated By Design", desc: "MSB-registered. FinCEN-compliant. Bank-level controls end-to-end." },
+              { num: "03", title: "Always On", desc: "24/7 execution with redundant infrastructure across three continents." },
+            ].map((item, i) => (
               <motion.div
                 key={i}
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: i * 0.1 }}
-                className="group border-b border-border pb-8"
+                transition={{ duration: 0.6, delay: i * 0.12 }}
+                className="glass rounded-2xl p-8 hover:border-primary/40 transition-all group cursor-pointer"
               >
-                <div className="flex items-baseline gap-6 mb-4">
-                  <span className="text-sm font-mono text-primary">{cap.num}</span>
-                  <h3 className="text-3xl font-serif group-hover:text-primary transition-colors">{cap.title}</h3>
-                </div>
-                <p className="text-foreground/60 pl-11">{cap.desc}</p>
+                <div className="text-xs font-mono text-primary mb-4">{item.num}</div>
+                <h3 className="text-xl font-serif mb-3 group-hover:text-primary transition-colors">
+                  {item.title}
+                </h3>
+                <p className="text-sm text-foreground/60 leading-relaxed">{item.desc}</p>
               </motion.div>
             ))}
           </div>
         </div>
       </SectionReveal>
 
-      {/* Footer / CTA */}
-      <footer id="contact" className="relative bg-black pt-32 pb-12 px-4 md:px-12 overflow-hidden border-t border-white/10 z-10">
-        <div className="absolute inset-0 opacity-60 pointer-events-none">
-          <InteractiveGrid cellSize={48} />
+      {/* WHO WE SERVE — Cards over mosaic */}
+      <SectionReveal className="relative py-32 w-full overflow-hidden z-10">
+        <div className="absolute inset-0">
+          <InteractiveGrid cellSize={36} gap={5} baseAlpha={0.05} hotAlpha={0.95} />
         </div>
-        <div className="max-w-[1400px] mx-auto relative z-10">
-          <div className="text-center mb-32">
+        <div className="absolute inset-0 bg-gradient-to-b from-background via-transparent to-background pointer-events-none" />
+
+        <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-12">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="font-serif text-5xl md:text-7xl tracking-tight text-center mb-20"
+          >
+            Who we <em className="text-primary text-glow">Serve.</em>
+          </motion.h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              {
+                num: "01",
+                title: "Institutions",
+                desc: "We serve hedge funds, asset managers, and family offices needing institutional-grade execution and bespoke OTC solutions tailored to mandate.",
+              },
+              {
+                num: "02",
+                title: "High-Net-Worth Individuals",
+                desc: "We cater to private clients with significant investable assets, providing them with personalized service for digital asset trading. Our OTC desk ensures optimal execution with privacy.",
+              },
+              {
+                num: "03",
+                title: "Brokers & Aggregators",
+                desc: "Brokers rely on our OTC desk for competitive pricing, quick settlement, and access to deep liquidity pools — streamlining execution and meeting demand in volatile markets.",
+              },
+            ].map((c, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.7, delay: i * 0.15 }}
+                whileHover={{ y: -6 }}
+                className="glass rounded-3xl p-8 cursor-pointer group transition-all hover:border-primary/50 hover:shadow-[0_0_40px_hsl(200_100%_62%/0.25)]"
+              >
+                <div className="text-2xl font-mono text-primary/70 mb-8">{c.num}</div>
+                <h3 className="text-2xl font-serif mb-4 group-hover:text-primary transition-colors">
+                  {c.title}
+                </h3>
+                <p className="text-sm text-foreground/60 leading-relaxed">{c.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </SectionReveal>
+
+      {/* OTC FEATURE STAR SECTION */}
+      <SectionReveal className="relative py-40 w-full overflow-hidden z-10">
+        <div className="relative max-w-7xl mx-auto px-4 md:px-12 grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+          <div className="relative h-[500px] flex items-center justify-center">
+            <motion.div
+              animate={{ rotate: [0, 360] }}
+              transition={{ duration: 80, ease: "linear", repeat: Infinity }}
+            >
+              <GlowingStar size={480} />
+            </motion.div>
+          </div>
+
+          <div>
+            <div className="text-xs uppercase tracking-[0.25em] text-primary mb-6 font-mono">
+              / OTC Desk
+            </div>
             <motion.h2
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="text-6xl md:text-8xl lg:text-[10rem] font-serif leading-none mb-8 tracking-tighter"
+              transition={{ duration: 0.8 }}
+              className="font-serif text-4xl md:text-6xl leading-[1.05] tracking-tight mb-8"
             >
-              Let's create<br /> <span className="text-primary italic">something.</span>
+              <em className="text-primary text-glow">Over-the-counter</em><br />
+              execution at scale.
             </motion.h2>
-            <button className="bg-primary text-black px-8 py-4 rounded-full text-sm font-semibold tracking-widest uppercase hover:bg-white transition-colors duration-300">
-              Start a Project
+            <motion.p
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+              className="text-foreground/60 text-lg leading-relaxed mb-10 max-w-md"
+            >
+              Block trades, structured products, and bespoke liquidity solutions.
+              Our desk is staffed by professionals from leading exchanges and prime brokerages.
+            </motion.p>
+            <button className="bg-primary text-primary-foreground px-6 py-3 rounded-full text-xs uppercase tracking-[0.18em] inline-flex items-center gap-2 hover:bg-white transition-all glow-cyan">
+              Contact our desk <ArrowRight className="w-3 h-3" />
+            </button>
+          </div>
+        </div>
+      </SectionReveal>
+
+      {/* CTA / FOOTER */}
+      <footer id="contact" className="relative pt-40 pb-12 px-4 md:px-12 overflow-hidden border-t border-white/5 z-10">
+        <HorizonGlow className="absolute left-0 right-0 top-0 h-[400px]" />
+
+        <div className="max-w-[1400px] mx-auto relative z-10">
+          <div className="text-center mb-32">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
+              className="glass inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs mb-8"
+            >
+              <Plus className="w-3 h-3 text-primary rotate-45" />
+              <span className="tracking-wider">Get In Touch</span>
+            </motion.div>
+            <motion.h2
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 1 }}
+              className="font-serif text-6xl md:text-8xl lg:text-[9rem] leading-[0.95] tracking-tight mb-10 text-glow-soft"
+            >
+              Let's create<br />
+              <em className="text-shimmer">something.</em>
+            </motion.h2>
+            <button className="bg-primary text-primary-foreground px-8 py-4 rounded-full text-sm font-medium tracking-[0.15em] uppercase inline-flex items-center gap-3 hover:bg-white transition-all glow-cyan">
+              Start a Project <ArrowRight className="w-4 h-4" />
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 pt-12 border-t border-white/10 text-sm text-foreground/60">
-            <div>
-              <h4 className="text-white font-serif text-2xl mb-4">AURA.</h4>
-              <p>Luxury Creative Agency<br />Based in London, operating globally.</p>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-8 pt-12 border-t border-white/10 text-sm text-foreground/60">
+            <div className="col-span-2 md:col-span-2">
+              <div className="flex items-center gap-2 mb-4">
+                <Plus className="w-5 h-5 text-primary rotate-45" strokeWidth={2.5} />
+                <h4 className="font-medium text-base text-foreground">
+                  <span className="text-primary">aura</span>studio
+                </h4>
+              </div>
+              <p className="max-w-xs">Luxury creative agency.<br />Based in London, operating globally.</p>
+              <div className="mt-6 inline-flex items-center gap-2 glass px-3 py-1.5 rounded-full text-xs">
+                <span className="w-2 h-2 rounded-full bg-primary glow-cyan" />
+                <span className="tracking-wider">All systems operational</span>
+              </div>
             </div>
             <div>
-              <h4 className="text-white mb-4 uppercase tracking-widest text-xs">Socials</h4>
+              <h4 className="text-foreground mb-4 uppercase tracking-[0.18em] text-xs">Company</h4>
               <ul className="space-y-2">
-                <li><a href="#" className="hover:text-primary transition-colors">Instagram</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">About us</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Solutions</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Insights</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-foreground mb-4 uppercase tracking-[0.18em] text-xs">Legal</h4>
+              <ul className="space-y-2">
+                <li><a href="#" className="hover:text-primary transition-colors">Licenses</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">AML/CTF</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Disclosures</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-foreground mb-4 uppercase tracking-[0.18em] text-xs">Follow us</h4>
+              <ul className="space-y-2">
                 <li><a href="#" className="hover:text-primary transition-colors">Twitter</a></li>
                 <li><a href="#" className="hover:text-primary transition-colors">LinkedIn</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Instagram</a></li>
               </ul>
             </div>
-            <div>
-              <h4 className="text-white mb-4 uppercase tracking-widest text-xs">Contact</h4>
-              <ul className="space-y-2">
-                <li><a href="mailto:hello@aura.studio" className="hover:text-primary transition-colors">hello@aura.studio</a></li>
-                <li>+44 (0) 20 7123 4567</li>
-              </ul>
-            </div>
-            <div className="flex items-end justify-end md:justify-start">
-              <p>&copy; {new Date().getFullYear()} AURA Studio. All rights reserved.</p>
+          </div>
+
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 pt-8 mt-12 border-t border-white/5 text-xs text-foreground/40">
+            <p>&copy; {new Date().getFullYear()} Aura Studio. All Rights Reserved.</p>
+            <div className="flex gap-6">
+              <a href="#" className="hover:text-primary transition-colors">Terms of Service</a>
+              <a href="#" className="hover:text-primary transition-colors">Privacy Policy</a>
+              <a href="#" className="hover:text-primary transition-colors">Cookies Policy</a>
             </div>
           </div>
         </div>
