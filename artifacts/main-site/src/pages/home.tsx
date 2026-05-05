@@ -6,6 +6,7 @@ import SectionReveal from "@/components/SectionReveal";
 import GlowingStar from "@/components/GlowingStar";
 import ScrollProgress from "@/components/ScrollProgress";
 import WarpStreaks from "@/components/WarpStreaks";
+import HyperWarp from "@/components/HyperWarp";
 import HorizonGlow from "@/components/HorizonGlow";
 import CursorGlow from "@/components/CursorGlow";
 import SparkleField from "@/components/SparkleField";
@@ -353,6 +354,55 @@ export default function Home() {
               Contact our desk <ArrowRight className="w-3 h-3" />
             </button>
           </div>
+        </div>
+      </SectionReveal>
+
+      {/* HYPERSPACE / READY-TO-DIVE SECTION */}
+      <SectionReveal id="dive" className="relative w-full overflow-hidden z-10 min-h-[90vh] flex items-center justify-center">
+        <div className="absolute inset-0">
+          <HyperWarp streakCount={260} intensity={1.05} voidRadiusFactor={0.3} />
+        </div>
+
+        <div className="relative z-10 max-w-3xl mx-auto text-center px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-150px" }}
+            transition={{ duration: 0.9 }}
+            className="glass inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs mb-8"
+          >
+            <Plus className="w-3 h-3 text-primary rotate-45" />
+            <span className="tracking-wider">How it Works</span>
+          </motion.div>
+          <motion.h2
+            initial={{ opacity: 0, scale: 0.94 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true, margin: "-150px" }}
+            transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
+            className="font-serif text-5xl md:text-7xl lg:text-8xl leading-[1.02] tracking-tight text-glow-soft"
+          >
+            Ready <em className="text-primary text-glow not-italic">to dive in?</em>
+          </motion.h2>
+          <motion.p
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true, margin: "-150px" }}
+            transition={{ duration: 1, delay: 0.4 }}
+            className="mt-8 text-base md:text-lg text-foreground/65 max-w-xl mx-auto leading-relaxed"
+          >
+            Step through the threshold — institutional liquidity, bespoke execution, and a desk that moves at the speed of your strategy.
+          </motion.p>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-150px" }}
+            transition={{ duration: 0.8, delay: 0.7 }}
+            className="mt-12"
+          >
+            <button className="bg-primary text-primary-foreground px-8 py-4 rounded-full text-sm font-medium tracking-[0.18em] uppercase inline-flex items-center gap-3 hover:bg-white transition-all glow-cyan">
+              Begin onboarding <ArrowRight className="w-4 h-4" />
+            </button>
+          </motion.div>
         </div>
       </SectionReveal>
 
