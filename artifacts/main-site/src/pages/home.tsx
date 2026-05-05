@@ -359,52 +359,81 @@ export default function Home() {
 
       {/* HYPERSPACE / READY-TO-DIVE SECTION */}
       <SectionReveal id="dive" className="relative w-full overflow-hidden z-10 min-h-[90vh] flex items-center justify-center">
-        {/* Canvas back-layer: fades in as the section enters the viewport,
-            timed to land just as the text starts emerging from the void. */}
+        {/* Canvas back-layer:
+            • opacity 0 → 1 in 0.6s (instant materialization with the burst)
+            • brightness 2.2× → 1× and saturation 1.5× → 1× over 1.8s
+              → the field "flares" during the intro burst, then dims to its
+              cinematic resting brightness as the text settles in the center. */}
         <motion.div
           className="absolute inset-0"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
+          initial={{ opacity: 0, filter: "brightness(2.2) saturate(1.5)" }}
+          whileInView={{ opacity: 1, filter: "brightness(1) saturate(1)" }}
           viewport={{ once: true, margin: "-150px" }}
-          transition={{ duration: 0.9, ease: "easeOut" }}
+          transition={{
+            opacity: { duration: 0.6, ease: "easeOut" },
+            filter: { duration: 1.8, ease: [0.16, 1, 0.3, 1] },
+          }}
         >
           <HyperWarp streakCount={260} intensity={1.05} voidRadiusFactor={0.3} />
         </motion.div>
 
         <div className="relative z-10 max-w-3xl mx-auto text-center px-4">
+          {/* Badge: scale-out from void + left→right wipe reveal */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.6, filter: "blur(14px)" }}
-            whileInView={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+            initial={{ opacity: 0, scale: 0.6, filter: "blur(12px)", clipPath: "inset(0% 100% 0% 0%)" }}
+            whileInView={{ opacity: 1, scale: 1, filter: "blur(0px)", clipPath: "inset(0% 0% 0% 0%)" }}
             viewport={{ once: true, margin: "-150px" }}
-            transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+            transition={{
+              duration: 0.9,
+              ease: [0.16, 1, 0.3, 1],
+              clipPath: { duration: 0.75, ease: [0.65, 0, 0.35, 1] },
+            }}
             className="glass inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs mb-8"
           >
             <Plus className="w-3 h-3 text-primary rotate-45" />
             <span className="tracking-wider">How it Works</span>
           </motion.div>
+
+          {/* Headline: HERO reveal — flies out of the void (scale + blur)
+              while a left→right clip-path wipe paints it into existence,
+              like the streaks themselves are unveiling each letter. */}
           <motion.h2
-            initial={{ opacity: 0, scale: 0.55, filter: "blur(18px)" }}
-            whileInView={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+            initial={{ opacity: 0, scale: 0.5, filter: "blur(20px)", clipPath: "inset(0% 100% 0% 0%)" }}
+            whileInView={{ opacity: 1, scale: 1, filter: "blur(0px)", clipPath: "inset(0% 0% 0% 0%)" }}
             viewport={{ once: true, margin: "-150px" }}
-            transition={{ duration: 1.3, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+            transition={{
+              duration: 1.4,
+              delay: 0.2,
+              ease: [0.16, 1, 0.3, 1],
+              clipPath: { duration: 1.15, delay: 0.35, ease: [0.65, 0, 0.35, 1] },
+            }}
             className="font-serif text-5xl md:text-7xl lg:text-8xl leading-[1.02] tracking-tight text-glow-soft"
           >
             Ready <em className="text-primary text-glow not-italic">to dive in?</em>
           </motion.h2>
+
+          {/* Subhead: gentler version of the same combo */}
           <motion.p
-            initial={{ opacity: 0, scale: 0.85, filter: "blur(10px)" }}
-            whileInView={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+            initial={{ opacity: 0, scale: 0.88, filter: "blur(8px)", clipPath: "inset(0% 100% 0% 0%)" }}
+            whileInView={{ opacity: 1, scale: 1, filter: "blur(0px)", clipPath: "inset(0% 0% 0% 0%)" }}
             viewport={{ once: true, margin: "-150px" }}
-            transition={{ duration: 1, delay: 0.55, ease: [0.16, 1, 0.3, 1] }}
+            transition={{
+              duration: 1,
+              delay: 0.7,
+              ease: [0.16, 1, 0.3, 1],
+              clipPath: { duration: 0.9, delay: 0.8, ease: [0.65, 0, 0.35, 1] },
+            }}
             className="mt-8 text-base md:text-lg text-foreground/65 max-w-xl mx-auto leading-relaxed"
           >
             Step through the threshold — institutional liquidity, bespoke execution, and a desk that moves at the speed of your strategy.
           </motion.p>
+
+          {/* Button: lands last, after the brightness has settled */}
           <motion.div
             initial={{ opacity: 0, scale: 0.7, y: 14, filter: "blur(8px)" }}
             whileInView={{ opacity: 1, scale: 1, y: 0, filter: "blur(0px)" }}
             viewport={{ once: true, margin: "-150px" }}
-            transition={{ duration: 0.85, delay: 0.85, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.85, delay: 1.1, ease: [0.16, 1, 0.3, 1] }}
             className="mt-12"
           >
             <button className="bg-primary text-primary-foreground px-8 py-4 rounded-full text-sm font-medium tracking-[0.18em] uppercase inline-flex items-center gap-3 hover:bg-white transition-all glow-cyan">
