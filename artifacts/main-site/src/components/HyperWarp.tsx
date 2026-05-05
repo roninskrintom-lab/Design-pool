@@ -65,8 +65,9 @@ export default function HyperWarp({
         Math.random() < 0.55
           ? 188 + Math.random() * 30 // 188–218 cyan / electric blue
           : 305 + Math.random() * 28; // 305–333 magenta / hot pink
-      s.alpha = 0.7 + Math.random() * 0.3;
-      s.thickness = 1.1 + Math.random() * 1.9;
+      s.alpha = 0.75 + Math.random() * 0.25;
+      // Beefier base thickness — closer to the reference's chunky neon look.
+      s.thickness = 2.2 + Math.random() * 2.8;
     };
 
     const initSquare = (sq: Square, idx: number) => {
@@ -123,9 +124,9 @@ export default function HyperWarp({
       for (const s of streaksRef.current) {
         const prevDist = s.dist;
         // Exponential perspective acceleration — slow start, fast finish.
-        // With dist range ~24..maxR (worst case maxR≈700 on a small viewport),
-        // these factors yield lifetime ≈ 9.7s (max speed) to ~14s (min speed).
-        s.dist *= 1.0028 + s.speed * 0.0026;
+        // Bumped per user feedback ("particles must move faster"): lifetime
+        // now ~4–5.6s (max→min speed) — closer to the reference video pace.
+        s.dist *= 1.008 + s.speed * 0.006;
 
         if (s.dist > maxR) {
           initStreak(s, maxR);
@@ -151,7 +152,8 @@ export default function HyperWarp({
         grad.addColorStop(1, `hsla(${s.hue}, 95%, 45%, 0)`);
 
         ctx.strokeStyle = grad;
-        ctx.lineWidth = s.thickness * (0.55 + distFactor * 1.25);
+        // Fatter near the edge — perspective makes "close" particles thick.
+        ctx.lineWidth = s.thickness * (0.7 + distFactor * 1.8);
         ctx.beginPath();
         ctx.moveTo(x1, y1);
         ctx.lineTo(x2, y2);
@@ -160,8 +162,8 @@ export default function HyperWarp({
 
       // ===== 4 white glowing squares =====
       for (const sq of squaresRef.current) {
-        // Slower than streaks → squares linger throughout the warp build-up.
-        sq.dist *= 1.002 + sq.speed * 0.0018;
+        // Slower than streaks but still snappy — squares linger ~6–8s.
+        sq.dist *= 1.0048 + sq.speed * 0.0035;
         sq.rot += sq.rotSpeed;
 
         if (sq.dist > maxR * 0.92) {
