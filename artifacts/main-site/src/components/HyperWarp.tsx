@@ -41,6 +41,12 @@ export default function HyperWarp({
   const rafRef = useRef<number | null>(null);
   const streaksRef = useRef<Streak[]>([]);
   const squaresRef = useRef<Square[]>([]);
+  const introStartRef = useRef<number | null>(null);
+
+  // Intro burst lasts this long; growth factor is up to ~4× during it,
+  // then eases back to normal so the warp settles into cinematic pace.
+  const INTRO_DURATION_MS = 1500;
+  const INTRO_BOOST_MAX = 3.2;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -50,6 +56,9 @@ export default function HyperWarp({
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let visible = true;
+    // Set false so the first IO callback (which fires actual intersection
+    // state on observe()) registers as "becoming visible" → triggers intro.
+    let wasVisible = false;
 
     const initStreak = (s: Streak, maxR: number, fresh = false) => {
       s.angle = Math.random() * Math.PI * 2;
@@ -120,13 +129,31 @@ export default function HyperWarp({
       ctx.clearRect(0, 0, w, h);
 
       // ===== Streaks =====
+      // ===== Intro burst boost =====
+      // For ~INTRO_DURATION_MS after the section enters the viewport, every
+      // streak's per-frame growth is multiplied by an eased boost that decays
+      // from INTRO_BOOST_MAX → 1. Visually: particles burst out of the void
+      // very fast, then settle into the cinematic steady-state warp pace.
+      let introBoost = 1;
+      if (introStartRef.current !== null) {
+        const introT = Math.min(1, (performance.now() - introStartRef.current) / INTRO_DURATION_MS);
+        // Ease-out cubic so the first ~300ms is the dramatic burst, then
+        // tapers smoothly to normal speed.
+        const decay = (1 - introT) * (1 - introT) * (1 - introT);
+        introBoost = 1 + decay * (INTRO_BOOST_MAX - 1);
+      }
+
+      // Particles fade in as they leave the void — no "popping" near center.
+      const voidEdge = Math.min(w, h) * voidRadiusFactor;
+      const appearStart = voidEdge * 0.55;
+      const appearRange = voidEdge * 0.45;
+
       ctx.lineCap = "round";
       for (const s of streaksRef.current) {
         const prevDist = s.dist;
-        // Exponential perspective acceleration — slow start, fast finish.
-        // Bumped per user feedback ("particles must move faster"): lifetime
-        // now ~4–5.6s (max→min speed) — closer to the reference video pace.
-        s.dist *= 1.008 + s.speed * 0.006;
+        // Multiplicative growth, with intro burst applied to the *delta*
+        // so steady-state lifetime stays ~4–5.6s as before.
+        s.dist *= 1 + (0.008 + s.speed * 0.006) * introBoost;
 
         if (s.dist > maxR) {
           initStreak(s, maxR);
@@ -134,6 +161,7 @@ export default function HyperWarp({
         }
 
         const distFactor = Math.min(1, s.dist / maxR);
+        const appearAlpha = Math.min(1, Math.max(0, (s.dist - appearStart) / appearRange));
         // Trail length: max of "instantaneous velocity" and "perspective length".
         // Long near edge, short near center → classic warp look.
         const trailLen = Math.max(s.dist - prevDist, s.dist * 0.45);
@@ -146,7 +174,7 @@ export default function HyperWarp({
         const y2 = cy + sa * Math.max(0, s.dist - trailLen);
 
         const grad = ctx.createLinearGradient(x1, y1, x2, y2);
-        const a = s.alpha * distFactor * intensity;
+        const a = s.alpha * distFactor * intensity * appearAlpha;
         grad.addColorStop(0, `hsla(${s.hue}, 100%, 82%, ${a})`);
         grad.addColorStop(0.32, `hsla(${s.hue}, 100%, 65%, ${a * 0.7})`);
         grad.addColorStop(1, `hsla(${s.hue}, 95%, 45%, 0)`);
@@ -163,7 +191,8 @@ export default function HyperWarp({
       // ===== 4 white glowing squares =====
       for (const sq of squaresRef.current) {
         // Slower than streaks but still snappy — squares linger ~6–8s.
-        sq.dist *= 1.0048 + sq.speed * 0.0035;
+        // Same intro boost applied to the delta so they burst with the streaks.
+        sq.dist *= 1 + (0.0048 + sq.speed * 0.0035) * introBoost;
         sq.rot += sq.rotSpeed;
 
         if (sq.dist > maxR * 0.92) {
@@ -173,8 +202,9 @@ export default function HyperWarp({
         }
 
         const distFactor = Math.min(1, sq.dist / (maxR * 0.92));
+        const sqAppear = Math.min(1, Math.max(0, (sq.dist - appearStart) / appearRange));
         const sz = sq.size * (0.45 + distFactor * 1.4);
-        const alpha = Math.min(1, 0.25 + distFactor * 1.05) * intensity;
+        const alpha = Math.min(1, 0.25 + distFactor * 1.05) * intensity * sqAppear;
 
         const x = cx + Math.cos(sq.angle) * sq.dist;
         const y = cy + Math.sin(sq.angle) * sq.dist;
@@ -224,7 +254,25 @@ export default function HyperWarp({
     const io = new IntersectionObserver(
       (entries) => {
         for (const e of entries) {
+          const becoming = e.isIntersecting && !wasVisible;
           visible = e.isIntersecting;
+          wasVisible = e.isIntersecting;
+
+          if (becoming) {
+            // Intro burst: reset every streak (and square) close to the void
+            // edge with a fresh hue/speed so they all explode outward together.
+            const { w: cw, h: ch } = sizeRef.current;
+            const maxR2 = Math.sqrt(cw * cw + ch * ch) / 2 + 80;
+            for (const s of streaksRef.current) {
+              initStreak(s, maxR2);
+              s.dist = 22 + Math.random() * 38; // tight spawn ring near void
+            }
+            for (const sq of squaresRef.current) {
+              sq.dist = 55 + Math.random() * 25;
+            }
+            introStartRef.current = performance.now();
+          }
+
           if (visible && rafRef.current === null && !reducedMotion) draw();
         }
       },
