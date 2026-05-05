@@ -123,7 +123,12 @@ export default function HyperWarp({
       const { w, h } = sizeRef.current;
       const cx = w / 2;
       const cy = h / 2;
-      const maxR = Math.sqrt(cx * cx + cy * cy) + 80;
+      // visibleR = distance from center to viewport corner.
+      // maxR = recycle boundary, well off-screen so the "respawn pop" of
+      // a finished streak is never visible to the user. Particles fly past
+      // the viewport edge and only get reset deep in the dead zone outside.
+      const visibleR = Math.sqrt(cx * cx + cy * cy);
+      const maxR = visibleR + Math.max(w, h) * 0.45;
 
       // Hard clear — clean streaks, no motion-blur smear
       ctx.clearRect(0, 0, w, h);
@@ -160,7 +165,10 @@ export default function HyperWarp({
           continue;
         }
 
-        const distFactor = Math.min(1, s.dist / maxR);
+        // Brightness curve uses *visible* viewport radius so streaks reach
+        // peak intensity at the screen edge, then keep their full glow as
+        // they continue traveling off-screen until they're recycled.
+        const distFactor = Math.min(1, s.dist / visibleR);
         const appearAlpha = Math.min(1, Math.max(0, (s.dist - appearStart) / appearRange));
         // Trail length: max of "instantaneous velocity" and "perspective length".
         // Long near edge, short near center → classic warp look.
@@ -195,13 +203,17 @@ export default function HyperWarp({
         sq.dist *= 1 + (0.0048 + sq.speed * 0.0035) * introBoost;
         sq.rot += sq.rotSpeed;
 
-        if (sq.dist > maxR * 0.92) {
-          // Reset closer to center, slight angle wobble
+        if (sq.dist > maxR * 0.95) {
+          // Reset closer to center, slight angle wobble. Recycle happens
+          // ~45% past the viewport corner so the user never sees the pop.
           sq.dist = 60 + Math.random() * 30;
           sq.angle += (Math.random() - 0.5) * 0.05;
         }
 
-        const distFactor = Math.min(1, sq.dist / (maxR * 0.92));
+        // Same trick as streaks: size/alpha curve maxes out at the visible
+        // edge so squares look at full strength there and stay that way as
+        // they continue flying off-screen.
+        const distFactor = Math.min(1, sq.dist / visibleR);
         const sqAppear = Math.min(1, Math.max(0, (sq.dist - appearStart) / appearRange));
         const sz = sq.size * (0.45 + distFactor * 1.4);
         const alpha = Math.min(1, 0.25 + distFactor * 1.05) * intensity * sqAppear;
