@@ -260,6 +260,21 @@
     border: 1px solid hsl(200 100% 62% / 0.18);
   }
 
+  .glass-strong {
+    background: hsl(220 50% 8% / 0.78);
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    border: 1px solid hsl(200 100% 62% / 0.12);
+  }
+
+  .scrollbar-hide {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
   /* Shimmer sweep across text */
   .text-shimmer {
     background: linear-gradient(
