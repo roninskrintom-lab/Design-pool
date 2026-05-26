@@ -1,6 +1,7 @@
 import { motion, useScroll, useTransform } from "framer-motion";
 import { ArrowRight, ArrowDown, Plus, Globe } from "lucide-react";
 import { useRef } from "react";
+import { Link } from "wouter";
 import InteractiveGrid from "@/components/InteractiveGrid";
 import SectionReveal from "@/components/SectionReveal";
 import GlowingStar from "@/components/GlowingStar";
@@ -58,12 +59,12 @@ export default function Home() {
           <button className="hidden md:flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-foreground/70 hover:text-primary transition-colors">
             <Globe className="w-4 h-4" /> English
           </button>
-          <button className="glass px-4 py-2 rounded-full text-xs uppercase tracking-[0.18em] hover:bg-primary/10 hover:border-primary/40 transition-all">
+          <Link href="/app" className="glass px-4 py-2 rounded-full text-xs uppercase tracking-[0.18em] hover:bg-primary/10 hover:border-primary/40 transition-all" data-testid="link-login">
             Log In
-          </button>
-          <button className="bg-primary text-primary-foreground px-4 py-2 rounded-full text-xs uppercase tracking-[0.18em] flex items-center gap-2 hover:bg-white transition-all glow-cyan">
+          </Link>
+          <Link href="/app" className="bg-primary text-primary-foreground px-4 py-2 rounded-full text-xs uppercase tracking-[0.18em] flex items-center gap-2 hover:bg-white transition-all glow-cyan" data-testid="link-onboard-nav">
             Onboard <ArrowRight className="w-3 h-3" />
-          </button>
+          </Link>
         </div>
       </nav>
 
@@ -358,7 +359,7 @@ export default function Home() {
       </SectionReveal>
 
       {/* HYPERSPACE / READY-TO-DIVE SECTION */}
-      <SectionReveal id="dive" className="relative w-full overflow-hidden z-10 min-h-[90vh] flex items-center justify-center">
+      <SectionReveal id="dive" className="relative w-full overflow-hidden z-10 min-h-[110vh] flex items-center justify-center">
         {/* Canvas back-layer:
             • opacity 0 → 1 in 0.6s (instant materialization with the burst)
             • brightness 2.2× → 1× and saturation 1.5× → 1× over 1.8s
@@ -436,9 +437,9 @@ export default function Home() {
             transition={{ duration: 0.85, delay: 1.1, ease: [0.16, 1, 0.3, 1] }}
             className="mt-12"
           >
-            <button className="bg-primary text-primary-foreground px-8 py-4 rounded-full text-sm font-medium tracking-[0.18em] uppercase inline-flex items-center gap-3 hover:bg-white transition-all glow-cyan">
+            <Link href="/app" className="bg-primary text-primary-foreground px-8 py-4 rounded-full text-sm font-medium tracking-[0.18em] uppercase inline-flex items-center gap-3 hover:bg-white transition-all glow-cyan" data-testid="link-begin-onboarding">
               Begin onboarding <ArrowRight className="w-4 h-4" />
-            </button>
+            </Link>
           </motion.div>
         </div>
       </SectionReveal>
