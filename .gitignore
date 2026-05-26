@@ -4,6 +4,7 @@
 certs/
 nginx/
 docker-compose.yaml
+docker-compose.yml
 
 
 # compiled output
