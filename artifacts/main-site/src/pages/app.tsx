@@ -1,5 +1,5 @@
-import { useState, useRef } from "react";
-import { motion, type PanInfo } from "framer-motion";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { motion } from "framer-motion";
 import {
   Home as HomeIcon,
   LineChart,
@@ -34,16 +34,44 @@ export default function MobileApp() {
   const [tab, setTab] = useState(0);
   const [balanceHidden, setBalanceHidden] = useState(false);
   const screensRef = useRef<HTMLDivElement>(null);
+  const scrollRafRef = useRef<number | null>(null);
 
-  const handleDragEnd = (_: unknown, info: PanInfo) => {
-    const w = screensRef.current?.offsetWidth ?? window.innerWidth;
-    const offset = info.offset.x;
-    const velocity = info.velocity.x;
-    let next = tab;
-    if (offset < -w / 4 || velocity < -500) next = Math.min(TABS.length - 1, tab + 1);
-    else if (offset > w / 4 || velocity > 500) next = Math.max(0, tab - 1);
-    setTab(next);
-  };
+  // Sync active tab from scroll position (debounced via rAF for 60fps)
+  const handleScroll = useCallback(() => {
+    if (scrollRafRef.current !== null) return;
+    scrollRafRef.current = requestAnimationFrame(() => {
+      scrollRafRef.current = null;
+      const el = screensRef.current;
+      if (!el) return;
+      const w = el.clientWidth;
+      if (w === 0) return;
+      const idx = Math.round(el.scrollLeft / w);
+      const clamped = Math.max(0, Math.min(TABS.length - 1, idx));
+      setTab((prev) => (prev === clamped ? prev : clamped));
+    });
+  }, []);
+
+  // Programmatic tab change → smooth scroll
+  const goToTab = useCallback((i: number) => {
+    const el = screensRef.current;
+    if (!el) return;
+    el.scrollTo({ left: i * el.clientWidth, behavior: "smooth" });
+  }, []);
+
+  // Re-align on resize/orientation change so partial scrolls don't desync
+  useEffect(() => {
+    const el = screensRef.current;
+    if (!el) return;
+    const onResize = () => {
+      el.scrollTo({ left: tab * el.clientWidth, behavior: "auto" });
+    };
+    window.addEventListener("resize", onResize);
+    window.addEventListener("orientationchange", onResize);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("orientationchange", onResize);
+    };
+  }, [tab]);
 
   return (
     <div
@@ -80,32 +108,29 @@ export default function MobileApp() {
         </button>
       </header>
 
-      {/* Swipeable screens */}
-      <div ref={screensRef} className="relative z-10 flex-1 overflow-hidden">
-        <motion.div
-          className="flex h-full"
-          style={{ width: `${TABS.length * 100}%` }}
-          drag="x"
-          dragConstraints={{ left: 0, right: 0 }}
-          dragElastic={0.18}
-          dragMomentum={false}
-          onDragEnd={handleDragEnd}
-          animate={{ x: `-${tab * (100 / TABS.length)}%` }}
-          transition={{ type: "spring", stiffness: 320, damping: 36 }}
-        >
-          <Screen>
-            <VaultScreen hidden={balanceHidden} onToggleHide={() => setBalanceHidden((h) => !h)} />
-          </Screen>
-          <Screen>
-            <MarketsScreen />
-          </Screen>
-          <Screen>
-            <DeskScreen />
-          </Screen>
-          <Screen>
-            <ProfileScreen />
-          </Screen>
-        </motion.div>
+      {/* Swipeable screens — native CSS scroll-snap (iOS-friendly, no JS drag) */}
+      <div
+        ref={screensRef}
+        onScroll={handleScroll}
+        className="relative z-10 flex-1 flex overflow-x-auto overflow-y-hidden snap-x snap-mandatory scrollbar-hide"
+        style={{
+          WebkitOverflowScrolling: "touch",
+          overscrollBehaviorX: "contain",
+          scrollSnapStop: "always",
+        }}
+      >
+        <Screen>
+          <VaultScreen hidden={balanceHidden} onToggleHide={() => setBalanceHidden((h) => !h)} />
+        </Screen>
+        <Screen>
+          <MarketsScreen />
+        </Screen>
+        <Screen>
+          <DeskScreen />
+        </Screen>
+        <Screen>
+          <ProfileScreen />
+        </Screen>
       </div>
 
       {/* Bottom tab bar */}
@@ -119,7 +144,7 @@ export default function MobileApp() {
             return (
               <button
                 key={t.id}
-                onClick={() => setTab(i)}
+                onClick={() => goToTab(i)}
                 className="flex flex-col items-center gap-1 py-1.5 px-3 rounded-xl relative transition-colors"
               >
                 {active && (
@@ -152,13 +177,17 @@ export default function MobileApp() {
 }
 
 /* ============================================================
-   Screen wrapper — each tab fills exactly 1/N of the carousel.
+   Screen wrapper — each tab is a full-viewport snap-stop. Vertical scroll
+   is isolated inside the screen so it never fights horizontal swipe.
    ============================================================ */
 function Screen({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className="h-full overflow-y-auto overflow-x-hidden px-5 pt-2 pb-6"
-      style={{ width: `${100 / TABS.length}%`, flexShrink: 0 }}
+      className="h-full w-full flex-shrink-0 snap-start snap-always overflow-y-auto overflow-x-hidden px-5 pt-2 pb-6"
+      style={{
+        WebkitOverflowScrolling: "touch",
+        overscrollBehaviorY: "contain",
+      }}
     >
       {children}
     </div>
